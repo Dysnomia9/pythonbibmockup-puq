@@ -37,7 +37,7 @@ class BibliotecaUMAG(ctk.CTk):
     # ICONS
     # ----------------------------------------------------------
     def _load_icons(self):
-        from icons import get_ctk_icon, get_badge_icon
+        from biblioteca_umag_python.views.icons import get_ctk_icon, get_badge_icon
         self.icons = {
             # Sidebar
             "sidebar_dashboard":         get_ctk_icon("dashboard", 20, "#C7D2FE"),
