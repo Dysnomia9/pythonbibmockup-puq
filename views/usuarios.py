@@ -8,7 +8,7 @@ from tkinter import ttk, messagebox
 from config import *
 from widgets import (make_card, make_stat_card, make_section_header,
                      make_treeview_style, make_dialog, dialog_action_buttons,
-                     labeled_entry, darken)
+                     labeled_entry, darken, icon_or_none)
 
 
 def build(parent: ctk.CTkFrame, icons: dict, app_root):
@@ -20,25 +20,31 @@ def build(parent: ctk.CTkFrame, icons: dict, app_root):
     top.grid(row=0, column=0, sticky="ew", pady=(0, 8))
     top.grid_columnconfigure(1, weight=1)
 
-    ctk.CTkLabel(top, text="", image=icons["btn_search"]).grid(
-        row=0, column=0, padx=(18, 5), pady=14)
+    _ic_search = icon_or_none(icons, "btn_search")
+    if _ic_search:
+        ctk.CTkLabel(top, text="", image=_ic_search).grid(
+            row=0, column=0, padx=(18, 5), pady=14)
+
     search_e = ctk.CTkEntry(top,
                              placeholder_text="Buscar por nombre, RUT o carrera…",
                              height=40, corner_radius=10, border_color=BORDER_COLOR)
     search_e.grid(row=0, column=1, sticky="ew", padx=5, pady=14)
 
     ctk.CTkButton(
-        top, text="  Buscar",
-        image=icons["btn_search"], compound="left",
+        top,
+        text="  Buscar" if _ic_search else "Buscar",
+        image=_ic_search, compound="left" if _ic_search else "none",
         font=("Segoe UI", 12),
         width=110, height=40, corner_radius=10,
         fg_color=UMAG_PURPLE, hover_color=darken(UMAG_PURPLE),
         command=lambda: messagebox.showinfo("Búsqueda", "Resultados filtrados (demo)"),
     ).grid(row=0, column=2, padx=5, pady=14)
 
+    _ic_plus = icon_or_none(icons, "btn_plus")
     ctk.CTkButton(
-        top, text="  Nuevo Usuario",
-        image=icons["btn_plus"], compound="left",
+        top,
+        text="  Nuevo Usuario" if _ic_plus else "Nuevo Usuario",
+        image=_ic_plus, compound="left" if _ic_plus else "none",
         font=("Segoe UI", 12),
         width=155, height=40, corner_radius=10,
         fg_color=SUCCESS, hover_color=darken(SUCCESS),
@@ -50,14 +56,14 @@ def build(parent: ctk.CTkFrame, icons: dict, app_root):
     stats.grid(row=1, column=0, sticky="ew", pady=(0, 8))
     stats.grid_columnconfigure((0, 1, 2, 3), weight=1)
 
-    activos    = sum(1 for u in MOCK_USUARIOS if u["activo"])
+    activos     = sum(1 for u in MOCK_USUARIOS if u["activo"])
     estudiantes = sum(1 for u in MOCK_USUARIOS if u["tipo"] == "Estudiante")
-    docentes   = sum(1 for u in MOCK_USUARIOS if u["tipo"] == "Docente")
+    docentes    = sum(1 for u in MOCK_USUARIOS if u["tipo"] == "Docente")
 
-    make_stat_card(stats, icons["badge_users"], "Total Usuarios",  len(MOCK_USUARIOS), UMAG_PURPLE,  0, 0)
-    make_stat_card(stats, icons["badge_check"], "Activos",         activos,            SUCCESS,      0, 1)
-    make_stat_card(stats, icons["badge_user"],  "Estudiantes",     estudiantes,        INFO,         0, 2)
-    make_stat_card(stats, icons["badge_list"],  "Docentes",        docentes,           ACCENT_AMBER, 0, 3)
+    make_stat_card(stats, icon_or_none(icons, "badge_users"), "Total Usuarios",  len(MOCK_USUARIOS), UMAG_PURPLE,  0, 0)
+    make_stat_card(stats, icon_or_none(icons, "badge_check"), "Activos",         activos,            SUCCESS,      0, 1)
+    make_stat_card(stats, icon_or_none(icons, "badge_user"),  "Estudiantes",     estudiantes,        INFO,         0, 2)
+    make_stat_card(stats, icon_or_none(icons, "badge_list"),  "Docentes",        docentes,           ACCENT_AMBER, 0, 3)
 
     # ── Tabla usuarios ───────────────────────────────────────────
     table_card = make_card(parent)
@@ -96,7 +102,7 @@ def build(parent: ctk.CTkFrame, icons: dict, app_root):
     tree.configure(yscrollcommand=sb.set)
 
 
-# ── Diálogo Nuevo Usuario (fix grab_set) ─────────────────────────
+# ── Diálogo Nuevo Usuario ─────────────────────────────────────────
 def _nuevo_usuario(app_root, icons):
     dialog = make_dialog(app_root, "Nuevo Usuario", width=460, height=440)
 
@@ -129,5 +135,5 @@ def _nuevo_usuario(app_root, icons):
                             f"Usuario registrado (demo)\nRUT: {entries[0].get()}")
         dialog.destroy()
 
-    dialog_action_buttons(card, "Registrar", icons["btn_check"],
+    dialog_action_buttons(card, "Registrar", icon_or_none(icons, "btn_check"),
                           _confirmar, dialog.destroy, row=8)

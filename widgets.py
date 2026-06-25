@@ -2,6 +2,7 @@
 """
 widgets.py — Componentes reutilizables del Sistema Bibliotecario UMAG
 Rediseño 2026: ajuste de colores y bordes a nueva paleta.
+Tolerante a icons=None (cuando views/icons.py no está disponible).
 """
 
 import customtkinter as ctk
@@ -9,9 +10,7 @@ from tkinter import ttk, messagebox
 from config import *
 
 
-# ============================================================
-# FIX grab_set para Python 3.14+
-# ============================================================
+
 def safe_grab_set(dialog: ctk.CTkToplevel, delay: int = 150):
     def _do_grab():
         try:
@@ -21,9 +20,15 @@ def safe_grab_set(dialog: ctk.CTkToplevel, delay: int = 150):
     dialog.after(delay, _do_grab)
 
 
-# ============================================================
+# HELPER
+
+def icon_or_none(icons: dict, key: str):
+    """Retorna el icono si existe y no es None, de lo contrario None."""
+    return icons.get(key) or None
+
+
+
 # COMPONENTES BASE
-# ============================================================
 def make_card(parent, **kwargs) -> ctk.CTkFrame:
     """Tarjeta blanca con borde sutil y esquinas redondeadas."""
     return ctk.CTkFrame(
@@ -57,7 +62,7 @@ def make_stat_card(parent, badge_icon, title: str, value, color: str,
     card.grid(row=row, column=col, sticky="nsew", padx=5, pady=5)
     card.grid_columnconfigure(1, weight=1)
 
-    if badge_icon:
+    if badge_icon is not None:
         ctk.CTkLabel(card, text="", image=badge_icon).grid(
             row=0, column=0, rowspan=2, padx=12, pady=12)
 
@@ -75,7 +80,7 @@ def make_mini_stat(parent, badge_icon, label: str, value, color: str, col: int):
     """Estadística pequeña para paneles compactos."""
     frame = ctk.CTkFrame(parent, fg_color="transparent")
     frame.grid(row=0, column=col, padx=12, pady=10)
-    if badge_icon:
+    if badge_icon is not None:
         ctk.CTkLabel(frame, text="", image=badge_icon).pack(pady=(0, 3))
     ctk.CTkLabel(frame, text=label, font=FONT_SMALL,
                  text_color=TEXT_SECONDARY).pack()
@@ -149,16 +154,27 @@ def dialog_action_buttons(parent, confirm_text: str, confirm_icon,
     btn_frame = ctk.CTkFrame(parent, fg_color="transparent")
     btn_frame.grid(row=row, column=0, columnspan=2, pady=16)
 
-    ctk.CTkButton(
-        btn_frame,
-        text=f"  {confirm_text}",
-        image=confirm_icon if confirm_icon else None,
-        compound="left" if confirm_icon else "none",
-        font=("Segoe UI", 13, "bold"),
-        width=150, height=38, corner_radius=9,
-        fg_color=SUCCESS, hover_color=darken(SUCCESS),
-        command=on_confirm,
-    ).pack(side="left", padx=6)
+    # Botón confirmar — con o sin ícono
+    if confirm_icon is not None:
+        ctk.CTkButton(
+            btn_frame,
+            text=f"  {confirm_text}",
+            image=confirm_icon,
+            compound="left",
+            font=("Segoe UI", 13, "bold"),
+            width=150, height=38, corner_radius=9,
+            fg_color=SUCCESS, hover_color=darken(SUCCESS),
+            command=on_confirm,
+        ).pack(side="left", padx=6)
+    else:
+        ctk.CTkButton(
+            btn_frame,
+            text=confirm_text,
+            font=("Segoe UI", 13, "bold"),
+            width=150, height=38, corner_radius=9,
+            fg_color=SUCCESS, hover_color=darken(SUCCESS),
+            command=on_confirm,
+        ).pack(side="left", padx=6)
 
     ctk.CTkButton(
         btn_frame,

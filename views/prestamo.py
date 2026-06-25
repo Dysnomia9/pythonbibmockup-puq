@@ -7,7 +7,8 @@ import customtkinter as ctk
 from tkinter import ttk, messagebox
 from config import *
 from widgets import (make_card, make_treeview_style, make_section_header,
-                     make_dialog, dialog_action_buttons, labeled_entry, darken)
+                     make_dialog, dialog_action_buttons, labeled_entry,
+                     darken, icon_or_none)
 
 
 def build(parent: ctk.CTkFrame, icons: dict, app_root):
@@ -48,18 +49,22 @@ def build(parent: ctk.CTkFrame, icons: dict, app_root):
         messagebox.showinfo("Usuario encontrado",
                             f"RUT: {rut}\nNombre: María González\nTipo: Estudiante")
 
+    _ic_search = icon_or_none(icons, "btn_search")
     ctk.CTkButton(
-        search_card, text="  Buscar",
-        image=icons["btn_search"], compound="left",
+        search_card,
+        text="  Buscar" if _ic_search else "Buscar",
+        image=_ic_search, compound="left" if _ic_search else "none",
         font=("Segoe UI", 13, "bold"),
         width=120, height=40, corner_radius=10,
         fg_color=UMAG_PURPLE, hover_color=darken(UMAG_PURPLE),
         command=_buscar,
     ).grid(row=1, column=2, padx=5, pady=(0, 16))
 
+    _ic_plus = icon_or_none(icons, "btn_plus")
     ctk.CTkButton(
-        search_card, text="  Nuevo Préstamo",
-        image=icons["btn_plus"], compound="left",
+        search_card,
+        text="  Nuevo Préstamo" if _ic_plus else "Nuevo Préstamo",
+        image=_ic_plus, compound="left" if _ic_plus else "none",
         font=("Segoe UI", 13),
         width=165, height=40, corner_radius=10,
         fg_color=SUCCESS, hover_color=darken(SUCCESS),
@@ -103,12 +108,12 @@ def build(parent: ctk.CTkFrame, icons: dict, app_root):
     cols = ("ID", "Libro", "Código", "F. Préstamo", "F. Devolución", "Estado")
     tree = ttk.Treeview(tf, columns=cols, show="headings",
                         style="Prestamo.Treeview", height=6)
-    tree.heading("ID",           text="ID");            tree.column("ID",           width=40,  anchor="center")
-    tree.heading("Libro",        text="Libro");         tree.column("Libro",        width=280)
-    tree.heading("Código",       text="Código");        tree.column("Código",       width=120, anchor="center")
-    tree.heading("F. Préstamo",  text="F. Préstamo");   tree.column("F. Préstamo",  width=100, anchor="center")
-    tree.heading("F. Devolución",text="F. Devolución"); tree.column("F. Devolución",width=100, anchor="center")
-    tree.heading("Estado",       text="Estado");        tree.column("Estado",       width=100, anchor="center")
+    tree.heading("ID",            text="ID");            tree.column("ID",            width=40,  anchor="center")
+    tree.heading("Libro",         text="Libro");         tree.column("Libro",         width=280)
+    tree.heading("Código",        text="Código");        tree.column("Código",        width=120, anchor="center")
+    tree.heading("F. Préstamo",   text="F. Préstamo");   tree.column("F. Préstamo",   width=100, anchor="center")
+    tree.heading("F. Devolución", text="F. Devolución"); tree.column("F. Devolución", width=100, anchor="center")
+    tree.heading("Estado",        text="Estado");        tree.column("Estado",        width=100, anchor="center")
 
     from config import MOCK_PRESTAMOS
     for p in MOCK_PRESTAMOS:
@@ -127,7 +132,7 @@ def build(parent: ctk.CTkFrame, icons: dict, app_root):
     tree.configure(yscrollcommand=sb.set)
 
 
-# ── Diálogo Nuevo Préstamo (fix grab_set) ────────────────────────
+# ── Diálogo Nuevo Préstamo ────────────────────────────────────────
 def _nuevo_prestamo(app_root, icons):
     dialog = make_dialog(app_root, "Nuevo Préstamo", width=460, height=340)
 
@@ -139,8 +144,8 @@ def _nuevo_prestamo(app_root, icons):
                  font=("Segoe UI", 15, "bold"), text_color=UMAG_PURPLE).grid(
         row=0, column=0, columnspan=2, padx=20, pady=(18, 10), sticky="w")
 
-    e_rut  = labeled_entry(card, "RUT:",   1, default="12.345.678-5",
-                            placeholder="Ej: 12.345.678-5", font=("Consolas", 13))
+    e_rut   = labeled_entry(card, "RUT:",   1, default="12.345.678-5",
+                             placeholder="Ej: 12.345.678-5", font=("Consolas", 13))
     e_libro = labeled_entry(card, "Libro:", 2, placeholder="Título del libro")
     e_dias  = labeled_entry(card, "Días:",  3, default="14")
 
@@ -155,5 +160,5 @@ def _nuevo_prestamo(app_root, icons):
                             f"Días: {e_dias.get()}")
         dialog.destroy()
 
-    dialog_action_buttons(card, "Registrar", icons["btn_check"],
+    dialog_action_buttons(card, "Registrar", icon_or_none(icons, "btn_check"),
                           _confirmar, dialog.destroy, row=4)

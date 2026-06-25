@@ -130,7 +130,6 @@ def build(parent: ctk.CTkFrame, icons: dict, personas_en_sala: int,
             bar_h = (d["entradas"] / max_val) * (h - pad_y * 2)
             y     = h - pad_y - bar_h
             color = PALETTE[i]
-            alpha = "" if i < 5 else ""
 
             canvas.create_rectangle(x, y, x + bar_w, h - pad_y,
                                     fill=color, outline="", width=0)
@@ -226,11 +225,11 @@ def _quick_btn(parent, label: str, sublabel: str, color: str,
                  font=("Segoe UI", 13, "bold"), text_color="#FFFFFF",
                  anchor="w").grid(row=0, column=0, sticky="w")
     ctk.CTkLabel(inner, text=sublabel,
-                 font=("Segoe UI", 10), text_color="rgba(255,255,255,0.75)",
+                 font=("Segoe UI", 10), text_color="#C7D2FE",  # blanco suave — antes rgba(255,255,255,0.75)
                  anchor="w").grid(row=1, column=0, sticky="w")
 
     arrow = ctk.CTkLabel(inner, text="→",
-                         font=("Segoe UI", 16), text_color="rgba(255,255,255,0.6)")
+                         font=("Segoe UI", 16), text_color="#94A3B8")  # antes rgba(255,255,255,0.6)
     arrow.grid(row=0, column=1, rowspan=2, padx=(8, 0))
 
     # Hacer todo el frame clickeable

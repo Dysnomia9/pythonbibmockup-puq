@@ -8,7 +8,7 @@ from tkinter import ttk, messagebox
 from datetime import datetime
 from config import *
 from widgets import (make_card, make_mini_stat, make_treeview_style,
-                     make_section_header, darken)
+                     make_section_header, darken, icon_or_none)
 
 
 def build(parent: ctk.CTkFrame, icons: dict,
@@ -28,11 +28,11 @@ def build(parent: ctk.CTkFrame, icons: dict,
     aforo_card = make_card(left)
     aforo_card.grid(row=0, column=0, sticky="ew", pady=(0, 8))
     aforo_card.grid_columnconfigure((0, 1, 2), weight=1)
-    make_mini_stat(aforo_card, icons["badge_users"], "En Sala",
+    make_mini_stat(aforo_card, icon_or_none(icons, "badge_users"), "En Sala",
                    f"{personas_en_sala}/{capacidad}", UMAG_PURPLE, 0)
-    make_mini_stat(aforo_card, icons["badge_door"],  "Entradas Hoy",
+    make_mini_stat(aforo_card, icon_or_none(icons, "badge_door"),  "Entradas Hoy",
                    "87", ACCENT_TEAL, 1)
-    make_mini_stat(aforo_card, icons["badge_check"], "Disponibles",
+    make_mini_stat(aforo_card, icon_or_none(icons, "badge_check"), "Disponibles",
                    f"{capacidad - personas_en_sala}", SUCCESS, 2)
 
     # Formulario RUT
@@ -75,18 +75,22 @@ def build(parent: ctk.CTkFrame, icons: dict,
                             f"Hora: {datetime.now().strftime('%H:%M')}")
         rut_entry.delete(0, "end")
 
+    _ic_check = icon_or_none(icons, "btn_check")
     ctk.CTkButton(
-        rut_card, text="  Registrar",
-        image=icons["btn_check"], compound="left",
+        rut_card,
+        text="  Registrar" if _ic_check else "Registrar",
+        image=_ic_check, compound="left" if _ic_check else "none",
         font=("Segoe UI", 13, "bold"),
         width=140, height=40, corner_radius=10,
         fg_color=SUCCESS, hover_color=darken(SUCCESS),
         command=_registrar,
     ).grid(row=1, column=2, padx=5, pady=(0, 14))
 
+    _ic_qr = icon_or_none(icons, "btn_qr")
     ctk.CTkButton(
-        rut_card, text="  Lector QR",
-        image=icons["btn_qr"], compound="left",
+        rut_card,
+        text="  Lector QR" if _ic_qr else "Lector QR",
+        image=_ic_qr, compound="left" if _ic_qr else "none",
         font=("Segoe UI", 12),
         width=110, height=40, corner_radius=10,
         fg_color=UMAG_PURPLE, hover_color=darken(UMAG_PURPLE),
@@ -168,9 +172,11 @@ def build(parent: ctk.CTkFrame, icons: dict,
 
     _sep(8)
 
+    _ic_circle = icon_or_none(icons, "circle_green")
     st = ctk.CTkFrame(right, fg_color="transparent")
     st.grid(row=9, column=0, pady=(8, 4))
-    ctk.CTkLabel(st, text="", image=icons["circle_green"]).pack(side="left", padx=(0, 6))
+    if _ic_circle:
+        ctk.CTkLabel(st, text="", image=_ic_circle).pack(side="left", padx=(0, 6))
     ctk.CTkLabel(st, text="OPERATIVO", font=("Segoe UI", 14, "bold"),
                  text_color=SUCCESS).pack(side="left")
 

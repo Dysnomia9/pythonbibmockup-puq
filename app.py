@@ -39,7 +39,8 @@ class BibliotecaUMAG(ctk.CTk):
     # ----------------------------------------------------------
     def _try_load_icons(self):
         try:
-            from biblioteca_umag_python.views.icons import get_ctk_icon, get_badge_icon
+            # Ruta correcta: views/icons.py dentro del mismo proyecto
+            from views.icons import get_ctk_icon, get_badge_icon
             self.icons = {
                 "badge_users":    get_badge_icon("users",       44, "#FFFFFF", UMAG_PURPLE),
                 "badge_door":     get_badge_icon("door",        44, "#FFFFFF", ACCENT_TEAL),
@@ -51,25 +52,34 @@ class BibliotecaUMAG(ctk.CTk):
                 "badge_list":     get_badge_icon("list",        44, "#FFFFFF", INFO),
                 "badge_user":     get_badge_icon("user",        44, "#FFFFFF", INFO),
                 "badge_shield":   get_badge_icon("shield",      44, "#FFFFFF", SUCCESS),
-                "btn_entrada":    get_ctk_icon("door",   24, "#FFFFFF"),
-                "btn_prestamo":   get_ctk_icon("book",   24, "#FFFFFF"),
-                "btn_reportes":   get_ctk_icon("chart",  24, "#FFFFFF"),
-                "btn_usuarios":   get_ctk_icon("users",  24, "#FFFFFF"),
-                "btn_salas":      get_ctk_icon("calendar", 24, "#FFFFFF"),
-                "btn_check":      get_ctk_icon("check",  18, "#FFFFFF"),
-                "btn_qr":         get_ctk_icon("qr",     18, "#FFFFFF"),
-                "btn_search":     get_ctk_icon("search", 18, "#FFFFFF"),
-                "btn_plus":       get_ctk_icon("plus",   18, "#FFFFFF"),
-                "btn_return":     get_ctk_icon("return", 18, "#FFFFFF"),
-                "alert_warning":  get_ctk_icon("warning", 18, WARNING),
-                "alert_list":     get_ctk_icon("list",    18, INFO),
-                "alert_key":      get_ctk_icon("key",     18, ACCENT_TEAL),
-                "alert_books":    get_ctk_icon("books",   18, TEXT_SECONDARY),
-                "bell":           get_ctk_icon("bell",    18, UMAG_PURPLE),
-                "circle_green":   get_ctk_icon("circle_dot", 18, SUCCESS),
+                "btn_entrada":    get_ctk_icon("door",      24, "#FFFFFF"),
+                "btn_prestamo":   get_ctk_icon("book",      24, "#FFFFFF"),
+                "btn_reportes":   get_ctk_icon("chart",     24, "#FFFFFF"),
+                "btn_usuarios":   get_ctk_icon("users",     24, "#FFFFFF"),
+                "btn_salas":      get_ctk_icon("calendar",  24, "#FFFFFF"),
+                "btn_check":      get_ctk_icon("check",     18, "#FFFFFF"),
+                "btn_qr":         get_ctk_icon("qr",        18, "#FFFFFF"),
+                "btn_search":     get_ctk_icon("search",    18, "#FFFFFF"),
+                "btn_plus":       get_ctk_icon("plus",      18, "#FFFFFF"),
+                "btn_return":     get_ctk_icon("return",    18, "#FFFFFF"),
+                "alert_warning":  get_ctk_icon("warning",   18, WARNING),
+                "alert_list":     get_ctk_icon("list",      18, INFO),
+                "alert_key":      get_ctk_icon("key",       18, ACCENT_TEAL),
+                "alert_books":    get_ctk_icon("books",     18, TEXT_SECONDARY),
+                "bell":           get_ctk_icon("bell",      18, UMAG_PURPLE),
+                "circle_green":   get_ctk_icon("circle_dot",18, SUCCESS),
             }
-        except Exception:
-            self.icons = {}
+        except Exception as e:
+            # icons no disponibles — las vistas deben tolerar valores None
+            self.icons = {k: None for k in [
+                "badge_users", "badge_door", "badge_books", "badge_warning",
+                "badge_chart", "badge_trending", "badge_check", "badge_list",
+                "badge_user", "badge_shield", "btn_entrada", "btn_prestamo",
+                "btn_reportes", "btn_usuarios", "btn_salas", "btn_check",
+                "btn_qr", "btn_search", "btn_plus", "btn_return",
+                "alert_warning", "alert_list", "alert_key", "alert_books",
+                "bell", "circle_green",
+            ]}
 
     # ----------------------------------------------------------
     # ATAJOS DE TECLADO
@@ -115,7 +125,7 @@ class BibliotecaUMAG(ctk.CTk):
             ctk.CTkFrame(
                 spines_f, width=4, height=h,
                 fg_color=color, corner_radius=1,
-            ).pack(side="left", padx=1, pady=(22 - h) // 2)  # alineados al fondo
+            ).pack(side="left", padx=1, pady=(22 - h) // 2)
 
         name_f = ctk.CTkFrame(brand, fg_color="transparent")
         name_f.pack(side="left", pady=0)
@@ -229,8 +239,8 @@ class BibliotecaUMAG(ctk.CTk):
         ).place(relx=0.5, rely=0.5, anchor="center")
 
         # Dot rojo notificaciones
-        dot = ctk.CTkFrame(right_f if False else notif_f,
-                           width=8, height=8, fg_color="#E11D48", corner_radius=4)
+        dot = ctk.CTkFrame(notif_f, width=8, height=8,
+                           fg_color="#E11D48", corner_radius=4)
         dot.place(relx=0.75, rely=0.18)
 
         # Avatar usuario
@@ -266,7 +276,6 @@ class BibliotecaUMAG(ctk.CTk):
         "usuarios":  "Gestión de Usuarios",
     }
 
-    # Color de acento por módulo (indicador inferior + tinte activo)
     MODULE_COLOR = {
         "dashboard": UMAG_PURPLE,
         "entrada":   ACCENT_TEAL,
