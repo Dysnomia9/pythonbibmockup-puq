@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 biblioteca_umag.py — Entry point del Sistema Bibliotecario UMAG
@@ -13,7 +12,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import customtkinter as ctk
 from app import BibliotecaUMAG
-from config import UMAG_PURPLE_DARK, CARD_BG, TEXT_SECONDARY
+from config import NAV_BG, TEXT_SECONDARY, SUCCESS
 from datetime import datetime
 
 
@@ -22,17 +21,24 @@ from datetime import datetime
 # ============================================================
 class StatusBar(ctk.CTkFrame):
     def __init__(self, parent):
-        super().__init__(parent, height=28, fg_color=UMAG_PURPLE_DARK, corner_radius=0)
+        super().__init__(parent, height=24, fg_color=NAV_BG, corner_radius=0)
         self.grid_columnconfigure(1, weight=1)
 
-        ctk.CTkLabel(self, text="  USUARIO: ADMIN",
-                     font=("Consolas", 9), text_color="#818CF8",
-                     anchor="w").grid(row=0, column=0, padx=10, pady=3, sticky="w")
-        ctk.CTkLabel(self, text="ROL: Administrador",
-                     font=("Consolas", 9), text_color="#818CF8").grid(row=0, column=1, pady=3)
+        ctk.CTkLabel(
+            self, text="  USUARIO: ADMIN",
+            font=("Consolas", 8), text_color="#4B5563",
+            anchor="w",
+        ).grid(row=0, column=0, padx=10, pady=3, sticky="w")
 
-        self.dt_label = ctk.CTkLabel(self, text="",
-                                      font=("Consolas", 9), text_color="#818CF8", anchor="e")
+        ctk.CTkLabel(
+            self, text="ROL: Administrador",
+            font=("Consolas", 8), text_color="#4B5563",
+        ).grid(row=0, column=1, pady=3)
+
+        self.dt_label = ctk.CTkLabel(
+            self, text="",
+            font=("Consolas", 8), text_color="#4B5563", anchor="e",
+        )
         self.dt_label.grid(row=0, column=2, padx=10, pady=3, sticky="e")
         self._update()
 
@@ -51,8 +57,12 @@ def main():
     ctk.set_default_color_theme("blue")
 
     app = BibliotecaUMAG()
+
+    # Status bar en row=2 (row=0 topnav, row=1 contenido)
+    app.grid_rowconfigure(2, weight=0)
     status = StatusBar(app)
-    status.grid(row=1, column=0, columnspan=2, sticky="ew")
+    status.grid(row=2, column=0, sticky="ew")
+
     app.mainloop()
 
 

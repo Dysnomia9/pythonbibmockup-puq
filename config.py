@@ -1,43 +1,62 @@
 # -*- coding: utf-8 -*-
 """
 config.py — Colores, constantes y datos mock del Sistema Bibliotecario UMAG
+Paleta rediseñada 2026: navy + indigo + semánticos limpios
 """
 
 import re
 
 # ============================================================
-# PALETA DE COLORES
+# PALETA DE COLORES — Rediseño 2026
 # ============================================================
-UMAG_PURPLE_DARK  = "#1E1147"
-UMAG_PURPLE       = "#3730A3"
-UMAG_INDIGO       = "#4338CA"
-UMAG_LIGHT        = "#EEF2FF"
-UMAG_ACCENT       = "#6D28D9"
-SIDEBAR_BG        = "#0F0A2E"
-SIDEBAR_HOVER     = "#1E1147"
-SIDEBAR_ACTIVE    = "#3730A3"
-CARD_BG           = "#FFFFFF"
-BG_MAIN           = "#F0F2FA"
-TEXT_PRIMARY      = "#1E1B4B"
-TEXT_SECONDARY    = "#6B7280"
-BORDER_COLOR      = "#DDE1F5"
 
+# Navbar / chrome
+NAV_BG            = "#111827"   # navy oscuro (antes SIDEBAR_BG opresivo)
+NAV_HOVER         = "#1F2937"   # hover sutil
+NAV_ACTIVE_BG     = "#1E1B4B"   # fondo ítem activo
+NAV_ACTIVE_BORDER = "#4F46E5"   # línea inferior activo (indigo vibrante)
+NAV_TEXT          = "#9CA3AF"   # texto inactivo
+NAV_TEXT_ACTIVE   = "#FFFFFF"   # texto activo
+NAV_BORDER        = "#1F2937"   # separadores en nav
+
+# Mantener aliases legacy para no romper otros módulos
+SIDEBAR_BG        = NAV_BG
+SIDEBAR_HOVER     = NAV_HOVER
+SIDEBAR_ACTIVE    = NAV_ACTIVE_BG
+UMAG_PURPLE_DARK  = "#0F172A"
+UMAG_PURPLE       = "#4F46E5"   # indigo principal (antes azul-morado genérico)
+UMAG_INDIGO       = "#6366F1"   # indigo secundario
+UMAG_LIGHT        = "#EEF2FF"   # fondo suave indigo
+UMAG_ACCENT       = "#4F46E5"
+
+# Superficie / layout
+CARD_BG           = "#FFFFFF"
+BG_MAIN           = "#F8FAFC"   # fondo general (antes F0F2FA, más grisáceo)
+TEXT_PRIMARY      = "#111827"   # casi negro, mayor contraste WCAG
+TEXT_SECONDARY    = "#6B7280"
+BORDER_COLOR      = "#E5E7EB"   # borde más suave
+
+# Estados semánticos
 SUCCESS           = "#059669"
 WARNING           = "#D97706"
 DANGER            = "#DC2626"
 INFO              = "#2563EB"
 
-ACCENT_TEAL       = "#0D9488"
-ACCENT_AMBER      = "#D97706"
-ACCENT_ROSE       = "#E11D48"
-ACCENT_EMERALD    = "#10B981"
+# Acentos de módulo (cada módulo tiene su color)
+ACCENT_TEAL       = "#0D9488"   # Entrada
+ACCENT_AMBER      = "#D97706"   # Salas
+ACCENT_ROSE       = "#BE185D"   # Reportes / alertas
+ACCENT_EMERALD    = "#10B981"   # disponible / ok
+
+# Lomos decorativos (sidebar brand)
+SPINE_COLORS = ["#4F46E5", "#0D9488", "#D97706", "#BE185D", "#059669", "#6366F1"]
 
 # ============================================================
 # TIPOGRAFÍA
 # ============================================================
-FONT_TITLE   = ("Segoe UI", 18, "bold")
+FONT_TITLE   = ("Segoe UI", 16, "bold")
 FONT_HEADING = ("Segoe UI", 14, "bold")
-FONT_SUBHEAD = ("Segoe UI", 13, "bold")
+FONT_SUBHEAD = ("Segoe UI", 12, "bold")
 FONT_BODY    = ("Segoe UI", 12)
 FONT_SMALL   = ("Segoe UI", 10)
 FONT_MONO    = ("Consolas", 12)
@@ -84,14 +103,14 @@ def format_rut(value: str) -> str:
 # DATOS MOCK
 # ============================================================
 MOCK_ENTRADAS = [
-    {"id": 1, "hora": "10:15", "via": "Manual",      "rut": "12.345.678-5", "nombre": "María González"},
-    {"id": 2, "hora": "10:02", "via": "QR",          "rut": "16.789.012-3", "nombre": "Carlos Muñoz"},
-    {"id": 3, "hora": "09:48", "via": "Autoservicio","rut": "19.234.567-8", "nombre": "Javiera Soto"},
-    {"id": 4, "hora": "09:33", "via": "Manual",      "rut": "14.567.890-1", "nombre": "Andrés Pizarro"},
-    {"id": 5, "hora": "09:17", "via": "QR",          "rut": "20.123.456-7", "nombre": "Camila Reyes"},
-    {"id": 6, "hora": "09:00", "via": "Autoservicio","rut": "17.890.123-4", "nombre": "Felipe Carvajal"},
-    {"id": 7, "hora": "08:45", "via": "Manual",      "rut": "15.678.901-2", "nombre": "Valentina Espinoza"},
-    {"id": 8, "hora": "08:30", "via": "QR",          "rut": "18.456.789-0", "nombre": "Nicolás Fuentes"},
+    {"id": 1, "hora": "10:15", "via": "Manual",       "rut": "12.345.678-5", "nombre": "María González"},
+    {"id": 2, "hora": "10:02", "via": "QR",           "rut": "16.789.012-3", "nombre": "Carlos Muñoz"},
+    {"id": 3, "hora": "09:48", "via": "Autoservicio", "rut": "19.234.567-8", "nombre": "Javiera Soto"},
+    {"id": 4, "hora": "09:33", "via": "Manual",       "rut": "14.567.890-1", "nombre": "Andrés Pizarro"},
+    {"id": 5, "hora": "09:17", "via": "QR",           "rut": "20.123.456-7", "nombre": "Camila Reyes"},
+    {"id": 6, "hora": "09:00", "via": "Autoservicio", "rut": "17.890.123-4", "nombre": "Felipe Carvajal"},
+    {"id": 7, "hora": "08:45", "via": "Manual",       "rut": "15.678.901-2", "nombre": "Valentina Espinoza"},
+    {"id": 8, "hora": "08:30", "via": "QR",           "rut": "18.456.789-0", "nombre": "Nicolás Fuentes"},
 ]
 
 MOCK_PRESTAMOS = [
@@ -108,13 +127,13 @@ MOCK_PRESTAMOS = [
 ]
 
 MOCK_USUARIOS = [
-    {"rut": "12.345.678-5", "nombre": "María González",    "tipo": "Estudiante", "carrera": "Ing. Informática",  "activo": True},
-    {"rut": "16.789.012-3", "nombre": "Carlos Muñoz",      "tipo": "Estudiante", "carrera": "Medicina",          "activo": True},
-    {"rut": "19.234.567-8", "nombre": "Javiera Soto",      "tipo": "Estudiante", "carrera": "Derecho",           "activo": True},
-    {"rut": "14.567.890-1", "nombre": "Andrés Pizarro",    "tipo": "Docente",    "carrera": "Dpto. Ingeniería",  "activo": True},
-    {"rut": "20.123.456-7", "nombre": "Camila Reyes",      "tipo": "Estudiante", "carrera": "Enfermería",        "activo": False},
-    {"rut": "17.890.123-4", "nombre": "Felipe Carvajal",   "tipo": "Externo",    "carrera": "—",                 "activo": True},
-    {"rut": "15.678.901-2", "nombre": "Valentina Espinoza","tipo": "Estudiante", "carrera": "Kinesiología",      "activo": True},
+    {"rut": "12.345.678-5", "nombre": "María González",     "tipo": "Estudiante", "carrera": "Ing. Informática",  "activo": True},
+    {"rut": "16.789.012-3", "nombre": "Carlos Muñoz",       "tipo": "Estudiante", "carrera": "Medicina",          "activo": True},
+    {"rut": "19.234.567-8", "nombre": "Javiera Soto",       "tipo": "Estudiante", "carrera": "Derecho",           "activo": True},
+    {"rut": "14.567.890-1", "nombre": "Andrés Pizarro",     "tipo": "Docente",    "carrera": "Dpto. Ingeniería",  "activo": True},
+    {"rut": "20.123.456-7", "nombre": "Camila Reyes",       "tipo": "Estudiante", "carrera": "Enfermería",        "activo": False},
+    {"rut": "17.890.123-4", "nombre": "Felipe Carvajal",    "tipo": "Externo",    "carrera": "—",                 "activo": True},
+    {"rut": "15.678.901-2", "nombre": "Valentina Espinoza", "tipo": "Estudiante", "carrera": "Kinesiología",      "activo": True},
 ]
 
 MOCK_ASISTENCIA = [

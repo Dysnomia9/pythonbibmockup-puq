@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-widgets.py — Componentes y helpers reutilizables del Sistema Bibliotecario UMAG
+widgets.py — Componentes reutilizables del Sistema Bibliotecario UMAG
+Rediseño 2026: ajuste de colores y bordes a nueva paleta.
 """
 
 import customtkinter as ctk
@@ -9,12 +10,9 @@ from config import *
 
 
 # ============================================================
-# FIX: grab_set seguro para Python 3.14+
-# El problema ocurre porque CTkToplevel no está completamente
-# renderizado cuando se llama grab_set(). Solución: diferir.
+# FIX grab_set para Python 3.14+
 # ============================================================
 def safe_grab_set(dialog: ctk.CTkToplevel, delay: int = 150):
-    """Aplica grab_set solo cuando la ventana ya es visible."""
     def _do_grab():
         try:
             dialog.grab_set()
@@ -31,22 +29,22 @@ def make_card(parent, **kwargs) -> ctk.CTkFrame:
     return ctk.CTkFrame(
         parent,
         fg_color=CARD_BG,
-        corner_radius=14,
+        corner_radius=12,
         border_width=1,
         border_color=BORDER_COLOR,
         **kwargs,
     )
 
 
-def make_section_header(parent, text: str, row: int = 0, col: int = 0, colspan: int = 1):
+def make_section_header(parent, text: str, row: int = 0,
+                        col: int = 0, colspan: int = 1):
     """Título de sección con línea decorativa izquierda."""
     frame = ctk.CTkFrame(parent, fg_color="transparent")
     frame.grid(row=row, column=col, columnspan=colspan,
-               padx=20, pady=(16, 8), sticky="w")
+               padx=16, pady=(14, 6), sticky="w")
 
-    accent = ctk.CTkFrame(frame, width=4, height=22,
-                          fg_color=UMAG_INDIGO, corner_radius=2)
-    accent.pack(side="left", padx=(0, 10))
+    ctk.CTkFrame(frame, width=3, height=18,
+                 fg_color=UMAG_PURPLE, corner_radius=2).pack(side="left", padx=(0, 8))
     ctk.CTkLabel(frame, text=text, font=FONT_SUBHEAD,
                  text_color=TEXT_PRIMARY).pack(side="left")
     return frame
@@ -54,32 +52,34 @@ def make_section_header(parent, text: str, row: int = 0, col: int = 0, colspan: 
 
 def make_stat_card(parent, badge_icon, title: str, value, color: str,
                    row: int = 0, col: int = 0) -> ctk.CTkFrame:
-    """Tarjeta de estadística con icono badge, título y valor."""
+    """Tarjeta de estadística con badge, título y valor."""
     card = make_card(parent)
     card.grid(row=row, column=col, sticky="nsew", padx=5, pady=5)
     card.grid_columnconfigure(1, weight=1)
 
-    ctk.CTkLabel(card, text="", image=badge_icon).grid(
-        row=0, column=0, rowspan=2, padx=14, pady=14)
+    if badge_icon:
+        ctk.CTkLabel(card, text="", image=badge_icon).grid(
+            row=0, column=0, rowspan=2, padx=12, pady=12)
 
     ctk.CTkLabel(card, text=title, font=FONT_SMALL,
                  text_color=TEXT_SECONDARY, anchor="w").grid(
-        row=0, column=1, sticky="sw", padx=(0, 14), pady=(14, 1))
+        row=0, column=1, sticky="sw", padx=(0, 12), pady=(12, 1))
 
-    ctk.CTkLabel(card, text=str(value), font=("Segoe UI", 24, "bold"),
+    ctk.CTkLabel(card, text=str(value), font=("Segoe UI", 22, "bold"),
                  text_color=color, anchor="w").grid(
-        row=1, column=1, sticky="nw", padx=(0, 14), pady=(0, 14))
+        row=1, column=1, sticky="nw", padx=(0, 12), pady=(0, 12))
     return card
 
 
 def make_mini_stat(parent, badge_icon, label: str, value, color: str, col: int):
     """Estadística pequeña para paneles compactos."""
     frame = ctk.CTkFrame(parent, fg_color="transparent")
-    frame.grid(row=0, column=col, padx=14, pady=12)
-    ctk.CTkLabel(frame, text="", image=badge_icon).pack(pady=(0, 4))
+    frame.grid(row=0, column=col, padx=12, pady=10)
+    if badge_icon:
+        ctk.CTkLabel(frame, text="", image=badge_icon).pack(pady=(0, 3))
     ctk.CTkLabel(frame, text=label, font=FONT_SMALL,
                  text_color=TEXT_SECONDARY).pack()
-    ctk.CTkLabel(frame, text=str(value), font=("Segoe UI", 18, "bold"),
+    ctk.CTkLabel(frame, text=str(value), font=("Segoe UI", 17, "bold"),
                  text_color=color).pack()
 
 
@@ -93,50 +93,49 @@ def make_treeview_style(style_name: str):
         fieldbackground=CARD_BG,
         foreground=TEXT_PRIMARY,
         font=("Segoe UI", 11),
-        rowheight=34,
+        rowheight=32,
         borderwidth=0,
     )
     style.configure(
         f"{style_name}.Treeview.Heading",
-        background=UMAG_LIGHT,
-        foreground=UMAG_PURPLE_DARK,
-        font=("Segoe UI", 11, "bold"),
+        background="#F1F5F9",
+        foreground="#374151",
+        font=("Segoe UI", 10, "bold"),
         borderwidth=0,
         relief="flat",
     )
     style.map(f"{style_name}.Treeview",
-              background=[("selected", "#DBEAFE")])
+              background=[("selected", "#EEF2FF")])
 
 
 def darken(hex_color: str, factor: float = 0.82) -> str:
-    """Oscurece un color hex por un factor dado."""
+    """Oscurece un color hex."""
     hex_color = hex_color.lstrip('#')
-    r, g, b = int(hex_color[:2], 16), int(hex_color[2:4], 16), int(hex_color[4:6], 16)
+    r = int(hex_color[:2], 16)
+    g = int(hex_color[2:4], 16)
+    b = int(hex_color[4:6], 16)
     return f"#{max(0,int(r*factor)):02x}{max(0,int(g*factor)):02x}{max(0,int(b*factor)):02x}"
 
 
 # ============================================================
-# DIÁLOGOS REUTILIZABLES
+# DIÁLOGOS
 # ============================================================
-def make_dialog(parent, title: str, width: int = 460, height: int = 360) -> ctk.CTkToplevel:
-    """
-    Crea un CTkToplevel centrado con grab_set diferido (fix Python 3.14+).
-    Retorna el dialog listo para agregar widgets.
-    """
+def make_dialog(parent, title: str,
+                width: int = 460, height: int = 360) -> ctk.CTkToplevel:
+    """CTkToplevel centrado con grab_set diferido (fix Python 3.14+)."""
     dialog = ctk.CTkToplevel(parent)
     dialog.title(title)
     dialog.configure(fg_color=BG_MAIN)
     dialog.resizable(False, False)
 
-    # Esperar a que la ventana esté lista antes de grab_set
     def _center_and_grab():
         dialog.update_idletasks()
         px = parent.winfo_rootx()
         py = parent.winfo_rooty()
         pw = parent.winfo_width()
         ph = parent.winfo_height()
-        x = px + (pw - width) // 2
-        y = py + (ph - height) // 2
+        x  = px + (pw - width)  // 2
+        y  = py + (ph - height) // 2
         dialog.geometry(f"{width}x{height}+{x}+{y}")
         safe_grab_set(dialog)
 
@@ -145,27 +144,30 @@ def make_dialog(parent, title: str, width: int = 460, height: int = 360) -> ctk.
 
 
 def dialog_action_buttons(parent, confirm_text: str, confirm_icon,
-                           on_confirm, on_cancel, row: int = 99):
-    """Fila de botones Confirmar / Cancelar para diálogos."""
+                          on_confirm, on_cancel, row: int = 99):
+    """Fila Confirmar / Cancelar para diálogos."""
     btn_frame = ctk.CTkFrame(parent, fg_color="transparent")
-    btn_frame.grid(row=row, column=0, columnspan=2, pady=18)
+    btn_frame.grid(row=row, column=0, columnspan=2, pady=16)
 
     ctk.CTkButton(
-        btn_frame, text=f"  {confirm_text}",
-        image=confirm_icon, compound="left",
+        btn_frame,
+        text=f"  {confirm_text}",
+        image=confirm_icon if confirm_icon else None,
+        compound="left" if confirm_icon else "none",
         font=("Segoe UI", 13, "bold"),
-        width=150, height=40, corner_radius=10,
+        width=150, height=38, corner_radius=9,
         fg_color=SUCCESS, hover_color=darken(SUCCESS),
         command=on_confirm,
-    ).pack(side="left", padx=8)
+    ).pack(side="left", padx=6)
 
     ctk.CTkButton(
-        btn_frame, text="Cancelar",
-        font=("Segoe UI", 13),
-        width=140, height=40, corner_radius=10,
+        btn_frame,
+        text="Cancelar",
+        font=("Segoe UI", 12),
+        width=130, height=38, corner_radius=9,
         fg_color="#6B7280", hover_color="#4B5563",
         command=on_cancel,
-    ).pack(side="left", padx=8)
+    ).pack(side="left", padx=6)
 
 
 def labeled_entry(parent, label: str, row: int,
@@ -174,14 +176,14 @@ def labeled_entry(parent, label: str, row: int,
     """Campo con etiqueta alineada a la izquierda."""
     ctk.CTkLabel(parent, text=label, font=font or FONT_BODY,
                  text_color=TEXT_PRIMARY).grid(
-        row=row, column=0, padx=(22, 10), pady=7, sticky="w")
+        row=row, column=0, padx=(20, 10), pady=6, sticky="w")
     entry = ctk.CTkEntry(
-        parent, height=38, corner_radius=9,
+        parent, height=36, corner_radius=8,
         border_color=BORDER_COLOR,
         placeholder_text=placeholder,
         font=font or FONT_BODY,
     )
-    entry.grid(row=row, column=1, padx=(0, 22), pady=7, sticky="ew")
+    entry.grid(row=row, column=1, padx=(0, 20), pady=6, sticky="ew")
     if default:
         entry.insert(0, default)
     return entry
