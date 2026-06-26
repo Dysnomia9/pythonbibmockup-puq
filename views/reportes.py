@@ -84,6 +84,7 @@ def build(parent: ctk.CTkFrame, icons: dict):
                                text=d["dia"][:3], font=("Segoe UI", 9), fill=TEXT_SECONDARY)
 
     canvas.bind("<Configure>", _draw)
+    canvas.after(50, _draw)
 
     # ── Top libros ───────────────────────────────────────────────
     books_card = make_card(parent)

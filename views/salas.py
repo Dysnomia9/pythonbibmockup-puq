@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 views/salas.py — Vista de Reserva de Salas de Estudio
-La grilla se construye de forma diferida (after_idle) para evitar el lag
-al cambiar de pestaña.
+La grilla se construye una sola vez durante el inicio de la aplicación.
 """
 
 import customtkinter as ctk
@@ -81,7 +80,7 @@ def build(parent: ctk.CTkFrame, icons: dict, app_root):
         ctk.CTkLabel(hdr, text=blq, font=("Segoe UI", 9, "bold"),
                      text_color=UMAG_PURPLE_DARK).grid(row=0, column=b + 2, padx=3, pady=9)
 
-    # Área scrollable — se llena de forma diferida para evitar lag
+    # Área scrollable
     scroll = ctk.CTkScrollableFrame(grid_card, fg_color="transparent")
     scroll.grid(row=1, column=0, sticky="nsew", padx=4, pady=(0, 8))
     scroll.grid_columnconfigure(0, weight=0, minsize=110)
@@ -89,56 +88,44 @@ def build(parent: ctk.CTkFrame, icons: dict, app_root):
     for b in range(len(BLOQUES_HORARIOS)):
         scroll.grid_columnconfigure(b + 2, weight=1, minsize=95)
 
-    # Diferir la construcción de la grilla para que no bloquee la UI
-    parent.after_idle(lambda: _fill_grid(scroll, icons, app_root))
+    _fill_grid(scroll, icons, app_root)
 
 
 def _fill_grid(scroll: ctk.CTkScrollableFrame, icons: dict, app_root):
-    """Llena la grilla de salas de forma lazy (llamado vía after_idle)."""
-    CHUNK = 5  # filas por ciclo de evento
+    """Llena la grilla de salas una sola vez."""
+    for s_idx, sala in enumerate(SALAS_CONFIG):
+        ctk.CTkLabel(scroll, text=sala["nombre"],
+                     font=("Segoe UI", 11, "bold" if s_idx < 5 else "normal"),
+                     text_color=TEXT_PRIMARY, anchor="w").grid(
+            row=s_idx, column=0, padx=(14, 4), pady=3, sticky="w")
 
-    def _render_chunk(start: int):
-        end = min(start + CHUNK, len(SALAS_CONFIG))
-        for s_idx in range(start, end):
-            sala = SALAS_CONFIG[s_idx]
+        ctk.CTkLabel(scroll, text=str(sala["capacidad"]),
+                     font=FONT_SMALL, text_color=TEXT_SECONDARY).grid(
+            row=s_idx, column=1, padx=4, pady=3)
 
-            ctk.CTkLabel(scroll, text=sala["nombre"],
-                         font=("Segoe UI", 11, "bold" if s_idx < 5 else "normal"),
-                         text_color=TEXT_PRIMARY, anchor="w").grid(
-                row=s_idx, column=0, padx=(14, 4), pady=3, sticky="w")
-
-            ctk.CTkLabel(scroll, text=str(sala["capacidad"]),
-                         font=FONT_SMALL, text_color=TEXT_SECONDARY).grid(
-                row=s_idx, column=1, padx=4, pady=3)
-
-            for b_idx in range(len(BLOQUES_HORARIOS)):
-                key = (sala["id"], b_idx)
-                if key in RESERVAS_MOCK:
-                    res = RESERVAS_MOCK[key]
-                    btn = ctk.CTkButton(
-                        scroll, text=res["nombre"][:12],
-                        font=("Segoe UI", 9), height=28, corner_radius=6,
-                        fg_color=ACCENT_ROSE, hover_color=darken(ACCENT_ROSE),
-                        text_color="white",
-                        command=lambda r=res, s=sala: messagebox.showinfo(
-                            "Reserva Ocupada",
-                            f"Sala: {s['nombre']}\nReservada por: {r['nombre']}\nRUT: {r['rut']}"),
-                    )
-                else:
-                    btn = ctk.CTkButton(
-                        scroll, text="Libre",
-                        font=("Segoe UI", 9), height=28, corner_radius=6,
-                        fg_color=ACCENT_EMERALD, hover_color=darken(ACCENT_EMERALD),
-                        text_color="white",
-                        command=lambda s=sala, b=BLOQUES_HORARIOS[b_idx]: _reservar(
-                            app_root, icons, s, b),
-                    )
-                btn.grid(row=s_idx, column=b_idx + 2, padx=3, pady=3, sticky="ew")
-
-        if end < len(SALAS_CONFIG):
-            scroll.after(10, lambda: _render_chunk(end))
-
-    _render_chunk(0)
+        for b_idx in range(len(BLOQUES_HORARIOS)):
+            key = (sala["id"], b_idx)
+            if key in RESERVAS_MOCK:
+                res = RESERVAS_MOCK[key]
+                btn = ctk.CTkButton(
+                    scroll, text=res["nombre"][:12],
+                    font=("Segoe UI", 9), height=28, corner_radius=6,
+                    fg_color=ACCENT_ROSE, hover_color=darken(ACCENT_ROSE),
+                    text_color="white",
+                    command=lambda r=res, s=sala: messagebox.showinfo(
+                        "Reserva Ocupada",
+                        f"Sala: {s['nombre']}\nReservada por: {r['nombre']}\nRUT: {r['rut']}"),
+                )
+            else:
+                btn = ctk.CTkButton(
+                    scroll, text="Libre",
+                    font=("Segoe UI", 9), height=28, corner_radius=6,
+                    fg_color=ACCENT_EMERALD, hover_color=darken(ACCENT_EMERALD),
+                    text_color="white",
+                    command=lambda s=sala, b=BLOQUES_HORARIOS[b_idx]: _reservar(
+                        app_root, icons, s, b),
+                )
+            btn.grid(row=s_idx, column=b_idx + 2, padx=3, pady=3, sticky="ew")
 
 
 def _reservar(app_root, icons, sala: dict, bloque: str):

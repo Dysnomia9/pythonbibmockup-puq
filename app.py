@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
 """
 app.py — Ventana principal con TOPNAV horizontal — Sistema Bibliotecario UMAG
-Rediseño 2026: navbar superior en lugar de sidebar lateral.
+Fixes 2026:
+  - Topnav siempre visible (layout grid corregido, columnas explícitas)
+  - Cache de vistas: no se destruye/recrea en cada cambio de pestaña → sin parpadeo
+  - Salas no congela la UI (el frame cacheado persiste; after_idle solo corre 1 vez)
 """
 
 import sys
@@ -26,9 +29,18 @@ class BibliotecaUMAG(ctk.CTk):
         self.personas_en_sala = 47
         self.capacidad        = 220
 
-        # icons: dict vacío por defecto — se llena si el módulo icons está disponible
         self.icons = {}
         self._try_load_icons()
+
+        # Cache de frames de cada módulo (se construyen la 1ra vez, luego se ocultan/muestran)
+        self._view_cache: dict = {
+            "dashboard": None,
+            "entrada":   None,
+            "prestamo":  None,
+            "salas":     None,
+            "reportes":  None,
+            "usuarios":  None,
+        }
 
         self._build_ui()
         self._bind_shortcuts()
@@ -39,7 +51,6 @@ class BibliotecaUMAG(ctk.CTk):
     # ----------------------------------------------------------
     def _try_load_icons(self):
         try:
-            # Ruta correcta: views/icons.py dentro del mismo proyecto
             from views.icons import get_ctk_icon, get_badge_icon
             self.icons = {
                 "badge_users":    get_badge_icon("users",       44, "#FFFFFF", UMAG_PURPLE),
@@ -69,8 +80,7 @@ class BibliotecaUMAG(ctk.CTk):
                 "bell":           get_ctk_icon("bell",      18, UMAG_PURPLE),
                 "circle_green":   get_ctk_icon("circle_dot",18, SUCCESS),
             }
-        except Exception as e:
-            # icons no disponibles — las vistas deben tolerar valores None
+        except Exception:
             self.icons = {k: None for k in [
                 "badge_users", "badge_door", "badge_books", "badge_warning",
                 "badge_chart", "badge_trending", "badge_check", "badge_list",
@@ -94,8 +104,10 @@ class BibliotecaUMAG(ctk.CTk):
     # ESQUELETO UI
     # ----------------------------------------------------------
     def _build_ui(self):
+        # row 0 = topnav (altura fija, NO expande), row 1 = contenido (expande)
         self.grid_columnconfigure(0, weight=1)
-        self.grid_rowconfigure(1, weight=1)   # row 0 = topnav, row 1 = contenido, row 2 = statusbar
+        self.grid_rowconfigure(0, weight=0)   # <-- FIX: topnav no expande
+        self.grid_rowconfigure(1, weight=1)
 
         self._build_topnav()
 
@@ -111,13 +123,16 @@ class BibliotecaUMAG(ctk.CTk):
         nav = ctk.CTkFrame(self, height=52, fg_color=NAV_BG, corner_radius=0)
         nav.grid(row=0, column=0, sticky="ew")
         nav.grid_propagate(False)
-        nav.grid_columnconfigure(1, weight=1)   # zona nav items estira
 
-        # ── Brand (logo + lomos decorativos) ──────────────────
+        # FIX: columnas explícitas — col 0 brand (fijo), col 1 nav (expande), col 2 derecha (fijo)
+        nav.grid_columnconfigure(0, weight=0, minsize=200)
+        nav.grid_columnconfigure(1, weight=1)
+        nav.grid_columnconfigure(2, weight=0)
+
+        # ── Brand ─────────────────────────────────────────────
         brand = ctk.CTkFrame(nav, fg_color="transparent")
-        brand.grid(row=0, column=0, sticky="ns", padx=(14, 0))
+        brand.grid(row=0, column=0, sticky="nsew", padx=(14, 0))
 
-        # Lomos de libros decorativos
         spines_f = ctk.CTkFrame(brand, fg_color="transparent")
         spines_f.pack(side="left", padx=(0, 10), pady=12)
         spine_heights = [18, 12, 22, 10, 16, 8]
@@ -137,10 +152,6 @@ class BibliotecaUMAG(ctk.CTk):
             name_f, text="SISTEMA BIBLIOTECARIO",
             font=("Segoe UI", 8), text_color=NAV_TEXT,
         ).pack(anchor="w")
-
-        # Separador vertical
-        ctk.CTkFrame(nav, width=1, fg_color="#1F2937").grid(
-            row=0, column=0, sticky="ns", padx=(180, 0), pady=8)
 
         # ── Ítems de navegación ───────────────────────────────
         nav_items_f = ctk.CTkFrame(nav, fg_color="transparent")
@@ -162,12 +173,10 @@ class BibliotecaUMAG(ctk.CTk):
             item_f = ctk.CTkFrame(nav_items_f, fg_color="transparent")
             item_f.pack(side="left")
 
-            # Indicador activo (línea inferior de color)
             indicator = ctk.CTkFrame(item_f, height=2, fg_color="transparent", corner_radius=0)
             indicator.pack(side="bottom", fill="x")
             self._nav_indicators[key] = indicator
 
-            # Texto del label + shortcut
             display = f"{label}  {shortcut}" if shortcut else label
 
             btn = ctk.CTkButton(
@@ -186,11 +195,10 @@ class BibliotecaUMAG(ctk.CTk):
             btn.pack(side="top", padx=4)
             self.nav_buttons[key] = btn
 
-        # ── Zona derecha: búsqueda + reloj + usuario ──────────
+        # ── Zona derecha ──────────────────────────────────────
         right_f = ctk.CTkFrame(nav, fg_color="transparent")
         right_f.grid(row=0, column=2, sticky="ns", padx=(0, 14))
 
-        # Buscador
         search_wrap = ctk.CTkFrame(right_f, fg_color="transparent")
         search_wrap.pack(side="left", padx=(0, 12), pady=11)
         ctk.CTkEntry(
@@ -205,11 +213,9 @@ class BibliotecaUMAG(ctk.CTk):
             font=("Segoe UI", 11),
         ).pack()
 
-        # Separador
-        ctk.CTkFrame(right_f, width=1, fg_color="#1F2937").pack(
+        ctk.CTkFrame(right_f, width=1, fg_color="#374151").pack(
             side="left", fill="y", pady=10, padx=4)
 
-        # Reloj
         clock_f = ctk.CTkFrame(right_f, fg_color="transparent")
         clock_f.pack(side="left", padx=(4, 12), pady=0)
 
@@ -225,7 +231,6 @@ class BibliotecaUMAG(ctk.CTk):
         self.nav_time_label.pack()
         self._update_clock()
 
-        # Badge de notificaciones
         notif_f = ctk.CTkFrame(
             right_f, width=30, height=30,
             fg_color="#1F2937", corner_radius=8,
@@ -237,13 +242,9 @@ class BibliotecaUMAG(ctk.CTk):
             notif_f, text="🔔",
             font=("Segoe UI", 13), text_color=NAV_TEXT,
         ).place(relx=0.5, rely=0.5, anchor="center")
+        ctk.CTkFrame(notif_f, width=8, height=8,
+                     fg_color="#E11D48", corner_radius=4).place(relx=0.75, rely=0.18)
 
-        # Dot rojo notificaciones
-        dot = ctk.CTkFrame(notif_f, width=8, height=8,
-                           fg_color="#E11D48", corner_radius=4)
-        dot.place(relx=0.75, rely=0.18)
-
-        # Avatar usuario
         avatar_f = ctk.CTkFrame(
             right_f, width=30, height=30,
             fg_color=UMAG_PURPLE, corner_radius=15,
@@ -265,17 +266,8 @@ class BibliotecaUMAG(ctk.CTk):
         self.after(1000, self._update_clock)
 
     # ----------------------------------------------------------
-    # NAVEGACIÓN
+    # NAVEGACIÓN con cache — SIN destroy/recreate
     # ----------------------------------------------------------
-    TITLES = {
-        "dashboard": "Dashboard",
-        "entrada":   "Registro de Entrada",
-        "prestamo":  "Gestión de Préstamos",
-        "salas":     "Reserva de Salas",
-        "reportes":  "Reportes y Estadísticas",
-        "usuarios":  "Gestión de Usuarios",
-    }
-
     MODULE_COLOR = {
         "dashboard": UMAG_PURPLE,
         "entrada":   ACCENT_TEAL,
@@ -285,7 +277,34 @@ class BibliotecaUMAG(ctk.CTk):
         "usuarios":  INFO,
     }
 
+    def _build_view(self, module_name: str) -> ctk.CTkFrame:
+        """Construye el frame de un módulo por primera (y única) vez."""
+        frame = ctk.CTkFrame(self.module_frame, fg_color="transparent")
+        frame.grid_columnconfigure(0, weight=1)
+        frame.grid_rowconfigure(0, weight=1)
+
+        builders = {
+            "dashboard": lambda f: dashboard.build(
+                f, self.icons,
+                self.personas_en_sala, self.capacidad,
+                self._show_module),
+            "entrada":   lambda f: entrada.build(
+                f, self.icons,
+                self.personas_en_sala, self.capacidad),
+            "prestamo":  lambda f: prestamo.build(
+                f, self.icons, self),
+            "salas":     lambda f: salas.build(
+                f, self.icons, self),
+            "reportes":  lambda f: reportes.build(
+                f, self.icons),
+            "usuarios":  lambda f: usuarios.build(
+                f, self.icons, self),
+        }
+        builders.get(module_name, builders["dashboard"])(frame)
+        return frame
+
     def _show_module(self, module_name: str):
+        # Actualizar botones del nav
         for key, btn in self.nav_buttons.items():
             if key == module_name:
                 btn.configure(text_color=NAV_TEXT_ACTIVE, fg_color=NAV_ACTIVE_BG)
@@ -295,26 +314,20 @@ class BibliotecaUMAG(ctk.CTk):
                 btn.configure(text_color=NAV_TEXT, fg_color="transparent")
                 self._nav_indicators[key].configure(fg_color="transparent")
 
-        # Limpiar contenido
-        for w in self.module_frame.winfo_children():
-            w.destroy()
+        # Construir vista solo si no existe todavía
+        if self._view_cache[module_name] is None:
+            self._view_cache[module_name] = self._build_view(module_name)
 
-        # Renderizar vista
-        builders = {
-            "dashboard": lambda: dashboard.build(
-                self.module_frame, self.icons,
-                self.personas_en_sala, self.capacidad,
-                self._show_module),
-            "entrada":   lambda: entrada.build(
-                self.module_frame, self.icons,
-                self.personas_en_sala, self.capacidad),
-            "prestamo":  lambda: prestamo.build(
-                self.module_frame, self.icons, self),
-            "salas":     lambda: salas.build(
-                self.module_frame, self.icons, self),
-            "reportes":  lambda: reportes.build(
-                self.module_frame, self.icons),
-            "usuarios":  lambda: usuarios.build(
-                self.module_frame, self.icons, self),
-        }
-        builders.get(module_name, builders["dashboard"])()
+        # Ocultar todos, mostrar el activo — sin destruir nada
+        for key, frame in self._view_cache.items():
+            if frame is not None:
+                frame.grid_remove()
+
+        self._view_cache[module_name].grid(row=0, column=0, sticky="nsew")
+
+
+if __name__ == "__main__":
+    ctk.set_appearance_mode("light")
+    ctk.set_default_color_theme("blue")
+    app = BibliotecaUMAG()
+    app.mainloop()
