@@ -1,250 +1,320 @@
 # -*- coding: utf-8 -*-
 """
-views/dashboard.py — Dashboard rediseñado 2026
-Cambios: sin panel "Acciones Rápidas" propio.
-En su lugar: fila de 4 botones de acceso rápido con color sólido por módulo.
+views/dashboard.py — Dashboard
+Sin emojis: todos los íconos vienen del sistema vectorial de icons.py
 """
 
 import tkinter as tk
 import customtkinter as ctk
+from datetime import datetime
 from config import *
-from widgets import make_card, make_stat_card, make_section_header, darken
-
-
-# ── Colores y metadatos de cada botón de acceso rápido ─────────────────────
-_QUICK_ACTIONS = [
-    # (módulo,      label,              sublabel,              color_fondo,  ícono_texto)
-    ("entrada",   "Registro entrada",  "F2 · acceso rápido",  ACCENT_TEAL,  "→"),
-    ("prestamo",  "Préstamos",         "23 activos ahora",    ACCENT_AMBER, "→"),
-    ("salas",     "Reserva de salas",  "F4 · 12 disponibles", "#7C3AED",   "→"),
-    ("reportes",  "Reportes",          "Estadísticas del día", ACCENT_ROSE, "→"),
-]
+from widgets import make_card, make_section_header, darken
 
 
 def build(parent: ctk.CTkFrame, icons: dict, personas_en_sala: int,
           capacidad: int, navigate_cb):
-    parent.grid_columnconfigure((0, 1), weight=1)
-    parent.grid_rowconfigure(2, weight=1)
 
-    # ── Fila 0: KPI cards ──────────────────────────────────────
-    stats = ctk.CTkFrame(parent, fg_color="transparent")
-    stats.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 10))
-    stats.grid_columnconfigure((0, 1, 2, 3), weight=1)
+    # Cargar íconos extra que necesita el dashboard
+    _extra = {}
+    try:
+        from views.icons import get_ctk_icon, get_badge_icon
+        _extra = {
+            "qa_entrada":   get_ctk_icon("door",        22, "#FFFFFF"),
+            "qa_prestamo":  get_ctk_icon("book",        22, "#FFFFFF"),
+            "qa_salas":     get_ctk_icon("calendar",    22, "#FFFFFF"),
+            "qa_reportes":  get_ctk_icon("chart",       22, "#FFFFFF"),
+            "act_prestamo": get_ctk_icon("book",        14, "#FFFFFF"),
+            "act_entrada":  get_ctk_icon("door",        14, "#FFFFFF"),
+            "act_sala":     get_ctk_icon("calendar",    14, "#FFFFFF"),
+            "act_return":   get_ctk_icon("return",      14, "#FFFFFF"),
+        }
+    except Exception:
+        pass
 
-    _kpi_card(stats, icons, "badge_users",   "Personas en sala",
-              f"{personas_en_sala}/{capacidad}", UMAG_PURPLE,  0, 0,
-              sub=f"{personas_en_sala*100//capacidad}% de aforo")
-    _kpi_card(stats, icons, "badge_door",    "Entradas hoy",
-              "87", ACCENT_TEAL,   0, 1, sub="+12% vs ayer")
-    _kpi_card(stats, icons, "badge_books",   "Préstamos activos",
-              "23", ACCENT_AMBER,  0, 2, sub="2 vencen hoy")
-    _kpi_card(stats, icons, "badge_warning", "Dev. pendientes",
-              "5",  ACCENT_ROSE,   0, 3, sub="3 con atraso")
+    all_icons = {**icons, **_extra}
 
-    # ── Fila 1: Botones acceso rápido ──────────────────────────
-    qa_frame = ctk.CTkFrame(parent, fg_color="transparent")
-    qa_frame.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(0, 10))
-    qa_frame.grid_columnconfigure((0, 1, 2, 3), weight=1)
+    parent.grid_columnconfigure(0, weight=3)
+    parent.grid_columnconfigure(1, weight=2)
+    parent.grid_rowconfigure(1, weight=1)
 
-    for col, (module, label, sublabel, color, _arrow) in enumerate(_QUICK_ACTIONS):
-        _quick_btn(qa_frame, label, sublabel, color, row=0, col=col,
-                   command=lambda m=module: navigate_cb(m))
+    # ══════════════════════════════════════════════
+    # COLUMNA IZQUIERDA
+    # ══════════════════════════════════════════════
+    left = ctk.CTkFrame(parent, fg_color="transparent")
+    left.grid(row=0, column=0, rowspan=2, sticky="nsew", padx=(0, 8))
+    left.grid_columnconfigure(0, weight=1)
+    left.grid_rowconfigure(2, weight=1)
 
-    # ── Fila 2 izq: Aforo + gráfico semanal ────────────────────
-    left_card = make_card(parent)
-    left_card.grid(row=2, column=0, sticky="nsew", padx=(0, 6), pady=(0, 4))
-    left_card.grid_columnconfigure(0, weight=1)
-    left_card.grid_rowconfigure(2, weight=1)
-
-    make_section_header(left_card, "Aforo de la Biblioteca", row=0)
-
-    # Barra de aforo
-    aforo_f = ctk.CTkFrame(left_card, fg_color="transparent")
-    aforo_f.grid(row=1, column=0, sticky="ew", padx=16, pady=(0, 8))
-    aforo_f.grid_columnconfigure(0, weight=1)
-
+    # ── KPI strip ─────────────────────────────────
     pct = personas_en_sala / capacidad
     bar_color = SUCCESS if pct < 0.50 else (WARNING if pct < 0.80 else DANGER)
 
-    # Número grande + meta
-    nums_f = ctk.CTkFrame(aforo_f, fg_color="transparent")
-    nums_f.grid(row=0, column=0, sticky="w")
-    ctk.CTkLabel(
-        nums_f, text=str(personas_en_sala),
-        font=("Segoe UI", 30, "bold"), text_color=UMAG_PURPLE,
-    ).pack(side="left")
-    ctk.CTkLabel(
-        nums_f, text=f" / {capacidad}",
-        font=("Segoe UI", 18), text_color=TEXT_SECONDARY,
-    ).pack(side="left", pady=(6, 0))
-    ctk.CTkLabel(
-        aforo_f, text=f"{pct*100:.0f}% ocupado",
-        font=FONT_SMALL, text_color=TEXT_SECONDARY,
-    ).grid(row=0, column=1, sticky="e")
+    kpi_row = ctk.CTkFrame(left, fg_color="transparent")
+    kpi_row.grid(row=0, column=0, sticky="ew", pady=(0, 10))
+    kpi_row.grid_columnconfigure((0, 1, 2, 3), weight=1)
 
-    bar = ctk.CTkProgressBar(
-        aforo_f, height=8, corner_radius=4,
-        progress_color=bar_color, fg_color=UMAG_LIGHT,
-    )
-    bar.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(6, 0))
-    bar.set(pct)
+    _kpi(kpi_row, all_icons.get("badge_users"),    "Personas en sala",
+         f"{personas_en_sala}/{capacidad}", f"{pct*100:.0f}% aforo",
+         UMAG_PURPLE,  "#EEF2FF", 0)
+    _kpi(kpi_row, all_icons.get("badge_door"),     "Entradas hoy",
+         "87", "+12% vs ayer",
+         ACCENT_TEAL,  "#F0FDFA", 1)
+    _kpi(kpi_row, all_icons.get("badge_books"),    "Préstamos activos",
+         "23", "2 vencen hoy",
+         ACCENT_AMBER, "#FFFBEB", 2)
+    _kpi(kpi_row, all_icons.get("badge_warning"),  "Dev. pendientes",
+         "5",  "3 con atraso",
+         ACCENT_ROSE,  "#FFF1F2", 3)
 
-    # Leyenda
-    leg_f = ctk.CTkFrame(aforo_f, fg_color="transparent")
-    leg_f.grid(row=2, column=0, columnspan=2, sticky="w", pady=(6, 0))
-    _legend_dot(leg_f, UMAG_PURPLE, f"Ocupados ({personas_en_sala})", 0)
-    _legend_dot(leg_f, BORDER_COLOR, f"Disponibles ({capacidad - personas_en_sala})", 1)
+    # ── Acciones rápidas ──────────────────────────
+    QA = [
+        ("entrada",  "Registro Entrada",  "F2 · acceso rápido",   ACCENT_TEAL,  "qa_entrada"),
+        ("prestamo", "Préstamos",          "23 activos ahora",     ACCENT_AMBER, "qa_prestamo"),
+        ("salas",    "Reserva de Salas",   "F4 · 12 disponibles",  "#7C3AED",    "qa_salas"),
+        ("reportes", "Reportes",           "Estadísticas del día",  ACCENT_ROSE,  "qa_reportes"),
+    ]
 
-    # Gráfico de asistencia semanal
-    make_section_header(left_card, "Asistencia Semanal", row=2)
+    qa_row = ctk.CTkFrame(left, fg_color="transparent")
+    qa_row.grid(row=1, column=0, sticky="ew", pady=(0, 10))
+    qa_row.grid_columnconfigure((0, 1, 2, 3), weight=1)
 
-    chart_f = ctk.CTkFrame(left_card, fg_color="transparent")
-    chart_f.grid(row=3, column=0, sticky="nsew", padx=16, pady=(0, 14))
-    chart_f.grid_columnconfigure(0, weight=1)
-    chart_f.grid_rowconfigure(0, weight=1)
+    for col, (mod, lbl, sub, color, ico_key) in enumerate(QA):
+        _quick_btn(qa_row, lbl, sub, color, all_icons.get(ico_key),
+                   row=0, col=col, command=lambda m=mod: navigate_cb(m))
 
-    canvas = tk.Canvas(chart_f, bg=CARD_BG, highlightthickness=0, height=130)
-    canvas.grid(row=0, column=0, sticky="ew")
+    # ── Gráfico asistencia semanal ─────────────────
+    chart_card = make_card(left)
+    chart_card.grid(row=2, column=0, sticky="nsew", pady=(0, 4))
+    chart_card.grid_columnconfigure(0, weight=1)
+    chart_card.grid_rowconfigure(1, weight=1)
 
-    PALETTE = [UMAG_PURPLE, UMAG_PURPLE, UMAG_PURPLE, UMAG_PURPLE,
-               UMAG_PURPLE, BORDER_COLOR, BORDER_COLOR]
+    _chart_header(chart_card, all_icons)
+
+    canvas = tk.Canvas(chart_card, bg=CARD_BG, highlightthickness=0, height=165)
+    canvas.grid(row=1, column=0, sticky="nsew", padx=18, pady=(0, 18))
 
     def _draw(event=None):
         canvas.delete("all")
-        w = canvas.winfo_width()
-        h = canvas.winfo_height()
-        if w < 50 or h < 30:
+        w, h = canvas.winfo_width(), canvas.winfo_height()
+        if w < 60 or h < 40:
             return
-        pad_x, pad_y = 30, 24
-        max_val = max(d["entradas"] for d in MOCK_ASISTENCIA)
-        n       = len(MOCK_ASISTENCIA)
-        bar_w   = (w - pad_x * 2) / n - 6
+
+        PAD_L, PAD_R, PAD_T, PAD_B = 36, 14, 18, 28
+        data   = MOCK_ASISTENCIA
+        max_v  = max(d["entradas"] for d in data)
+        n      = len(data)
+        usable_w = w - PAD_L - PAD_R
+        slot_w   = usable_w / n
+        bar_w    = slot_w * 0.55
+        bar_gap  = (slot_w - bar_w) / 2
 
         for i in range(5):
-            gy = pad_y + (h - pad_y * 2) * i / 4
-            canvas.create_line(pad_x, gy, w - pad_x, gy,
-                               fill="#F3F4F6", width=1)
+            gy  = PAD_T + (h - PAD_T - PAD_B) * i / 4
+            canvas.create_line(PAD_L, gy, w - PAD_R, gy, fill="#EEF0F8", width=1)
+            val = int(max_v * (1 - i / 4))
+            canvas.create_text(PAD_L - 5, gy, text=str(val),
+                               font=("Segoe UI", 8), fill="#B0B8D0", anchor="e")
 
-        for i, d in enumerate(MOCK_ASISTENCIA):
-            x     = pad_x + i * (bar_w + 6)
-            bar_h = (d["entradas"] / max_val) * (h - pad_y * 2)
-            y     = h - pad_y - bar_h
-            color = PALETTE[i]
+        today_idx  = datetime.now().weekday()
+        colors_bar = [UMAG_PURPLE if i <= today_idx else "#D4D8F0" for i in range(n)]
 
-            canvas.create_rectangle(x, y, x + bar_w, h - pad_y,
-                                    fill=color, outline="", width=0)
-            canvas.create_text(x + bar_w / 2, h - pad_y + 12,
-                               text=d["dia"][:3],
-                               font=("Segoe UI", 8), fill=TEXT_SECONDARY)
-            canvas.create_text(x + bar_w / 2, y - 8,
-                               text=str(d["entradas"]),
-                               font=("Segoe UI", 8, "bold"), fill=color)
+        for i, d in enumerate(data):
+            x0    = PAD_L + i * slot_w + bar_gap
+            x1    = x0 + bar_w
+            bar_h = (d["entradas"] / max_v) * (h - PAD_T - PAD_B)
+            y0    = h - PAD_B - bar_h
+            y1    = h - PAD_B
+            col_fill = colors_bar[i]
+
+            canvas.create_rectangle(x0+2, y0+4, x1+2, y1+2, fill="#E8EAFA", outline="")
+            canvas.create_rectangle(x0, y0, x1, y1, fill=col_fill, outline="")
+            canvas.create_oval(x0, y0-4, x1, y0+6, fill=col_fill, outline="")
+            canvas.create_text((x0+x1)/2, y0-10, text=str(d["entradas"]),
+                               font=("Segoe UI", 8, "bold"), fill=col_fill)
+            canvas.create_text((x0+x1)/2, h-PAD_B+12, text=d["dia"][:3],
+                               font=("Segoe UI", 9), fill=TEXT_SECONDARY)
 
     canvas.bind("<Configure>", _draw)
+    canvas.after(60, _draw)
 
-    # ── Fila 2 der: alertas ─────────────────────────────────────
-    right_card = make_card(parent)
-    right_card.grid(row=2, column=1, sticky="nsew", padx=(6, 0), pady=(0, 4))
-    right_card.grid_columnconfigure(0, weight=1)
+    # ══════════════════════════════════════════════
+    # COLUMNA DERECHA
+    # ══════════════════════════════════════════════
+    right = ctk.CTkFrame(parent, fg_color="transparent")
+    right.grid(row=0, column=1, rowspan=2, sticky="nsew")
+    right.grid_columnconfigure(0, weight=1)
+    right.grid_rowconfigure(1, weight=1)
 
-    make_section_header(right_card, "Requiere Atención", row=0)
+    # ── Aforo visual ──────────────────────────────
+    aforo_card = make_card(right)
+    aforo_card.grid(row=0, column=0, sticky="ew", pady=(0, 8))
+    aforo_card.grid_columnconfigure(0, weight=1)
+    make_section_header(aforo_card, "Aforo en Tiempo Real", row=0)
 
-    alerts = [
-        ("⚠", "3 préstamos vencidos sin devolver",   WARNING,       "hoy"),
-        ("📋", "2 reservas de sala por confirmar",    INFO,          "hoy"),
-        ("🔑", "1 llave de casillero pendiente",      ACCENT_TEAL,   "ayer"),
-        ("📚", "5 libros en reparación",              TEXT_SECONDARY,"sem."),
+    aforo_inner = ctk.CTkFrame(aforo_card, fg_color="transparent")
+    aforo_inner.grid(row=1, column=0, sticky="ew", padx=18, pady=(4, 14))
+    aforo_inner.grid_columnconfigure(1, weight=1)
+
+    donut = tk.Canvas(aforo_inner, width=90, height=90, bg=CARD_BG, highlightthickness=0)
+    donut.grid(row=0, column=0, rowspan=3, padx=(0, 14))
+
+    def _draw_donut(event=None):
+        donut.delete("all")
+        cx, cy, r_out, r_in = 45, 45, 40, 26
+        angle = pct * 360
+        donut.create_oval(cx-r_out, cy-r_out, cx+r_out, cy+r_out, fill="#EEF2FF", outline="")
+        if angle > 0:
+            donut.create_arc(cx-r_out, cy-r_out, cx+r_out, cy+r_out,
+                             start=90, extent=-angle, fill=bar_color, outline="", style="pieslice")
+        donut.create_oval(cx-r_in, cy-r_in, cx+r_in, cy+r_in, fill=CARD_BG, outline="")
+        donut.create_text(cx, cy-7, text=f"{pct*100:.0f}%",
+                          font=("Segoe UI", 13, "bold"), fill=bar_color)
+        donut.create_text(cx, cy+8, text="aforo",
+                          font=("Segoe UI", 8), fill=TEXT_SECONDARY)
+
+    _draw_donut()
+
+    ctk.CTkLabel(aforo_inner, text=str(personas_en_sala),
+                 font=("Segoe UI", 32, "bold"), text_color=UMAG_PURPLE,
+                 anchor="w").grid(row=0, column=1, sticky="sw")
+    ctk.CTkLabel(aforo_inner, text=f"de {capacidad} personas",
+                 font=FONT_SMALL, text_color=TEXT_SECONDARY,
+                 anchor="w").grid(row=1, column=1, sticky="nw")
+    bar_aforo = ctk.CTkProgressBar(aforo_inner, height=6, corner_radius=3,
+                                    progress_color=bar_color, fg_color=UMAG_LIGHT)
+    bar_aforo.grid(row=2, column=1, sticky="ew", pady=(6, 0))
+    bar_aforo.set(pct)
+
+    # ── Actividad reciente ─────────────────────────
+    act_card = make_card(right)
+    act_card.grid(row=1, column=0, sticky="nsew", pady=(0, 4))
+    act_card.grid_columnconfigure(0, weight=1)
+    act_card.grid_rowconfigure(1, weight=1)
+    make_section_header(act_card, "Actividad Reciente", row=0)
+
+    scroll_act = ctk.CTkScrollableFrame(act_card, fg_color="transparent")
+    scroll_act.grid(row=1, column=0, sticky="nsew", padx=8, pady=(0, 10))
+    scroll_act.grid_columnconfigure(0, weight=1)
+
+    # Íconos de actividad: (nombre, acción, hora, color_badge, clave_ícono)
+    activity = [
+        ("María González",     "Préstamo registrado", "10:15", UMAG_PURPLE,  "act_prestamo"),
+        ("Carlos Muñoz",       "Entrada registrada",  "10:02", ACCENT_TEAL,  "act_entrada"),
+        ("Javiera Soto",       "Sala 3 reservada",    "09:48", "#7C3AED",    "act_sala"),
+        ("Andrés Pizarro",     "Libro devuelto",      "09:33", SUCCESS,      "act_return"),
+        ("Camila Reyes",       "Entrada registrada",  "09:17", ACCENT_AMBER, "act_entrada"),
+        ("Felipe Carvajal",    "Préstamo registrado", "09:00", INFO,         "act_prestamo"),
+        ("Valentina Espinoza", "Sala 1 reservada",    "08:45", ACCENT_ROSE,  "act_sala"),
     ]
-    for i, (icon, text, color, time_str) in enumerate(alerts):
-        rf = ctk.CTkFrame(right_card, fg_color="#F8FAFC" if i % 2 == 0 else CARD_BG,
-                          corner_radius=8, height=42)
-        rf.grid(row=i + 1, column=0, sticky="ew", padx=14, pady=2)
-        rf.grid_propagate(False)
-        rf.grid_columnconfigure(1, weight=1)
 
-        ctk.CTkLabel(rf, text=icon, font=("Segoe UI", 14)).grid(
-            row=0, column=0, padx=(12, 8), pady=8)
-        ctk.CTkLabel(rf, text=text, font=FONT_SMALL,
-                     text_color=color, anchor="w").grid(row=0, column=1, sticky="w")
-        ctk.CTkLabel(rf, text=time_str, font=("Segoe UI", 9),
-                     text_color=TEXT_SECONDARY).grid(row=0, column=2, padx=(4, 14))
+    for i, (name, action, time, color, ico_key) in enumerate(activity):
+        row_f = ctk.CTkFrame(
+            scroll_act,
+            fg_color="#F8FAFC" if i % 2 == 0 else CARD_BG,
+            corner_radius=8, height=48,
+        )
+        row_f.grid(row=i, column=0, sticky="ew", padx=4, pady=2)
+        row_f.grid_propagate(False)
+        row_f.grid_columnconfigure(1, weight=1)
 
-    # Spacer
-    ctk.CTkLabel(right_card, text="").grid(row=6, pady=4)
+        # Badge cuadrado con ícono vectorial
+        badge_f = ctk.CTkFrame(row_f, width=30, height=30,
+                               fg_color=color, corner_radius=6)
+        badge_f.grid(row=0, column=0, padx=(10, 8), pady=9)
+        badge_f.grid_propagate(False)
+        ico = all_icons.get(ico_key)
+        if ico:
+            ctk.CTkLabel(badge_f, text="", image=ico).place(
+                relx=0.5, rely=0.5, anchor="center")
+
+        info_f = ctk.CTkFrame(row_f, fg_color="transparent")
+        info_f.grid(row=0, column=1, sticky="nsew")
+        ctk.CTkLabel(info_f, text=name,
+                     font=("Segoe UI", 11, "bold"), text_color=TEXT_PRIMARY,
+                     anchor="w").pack(anchor="w", pady=(9, 0))
+        ctk.CTkLabel(info_f, text=action,
+                     font=FONT_SMALL, text_color=TEXT_SECONDARY,
+                     anchor="w").pack(anchor="w")
+
+        ctk.CTkLabel(row_f, text=time,
+                     font=("Consolas", 9), text_color=TEXT_SECONDARY).grid(
+            row=0, column=2, padx=(4, 12))
 
 
-# ── Helpers ────────────────────────────────────────────────────────────────
+# ── Helpers ──────────────────────────────────────────────────────────────────
 
-def _kpi_card(parent, icons, badge_key, label, value, color,
-              row, col, sub=""):
-    """KPI card con borde lateral de color, valor grande y sublabel."""
-    card = ctk.CTkFrame(
-        parent,
-        fg_color=CARD_BG,
-        corner_radius=12,
-        border_width=1,
-        border_color=BORDER_COLOR,
-    )
-    card.grid(row=row, column=col, sticky="nsew", padx=5, pady=4)
+def _kpi(parent, badge_icon, label, value, sub, color, bg, col):
+    card = ctk.CTkFrame(parent, fg_color=bg, corner_radius=12,
+                        border_width=1, border_color=color)
+    card.grid(row=0, column=col, sticky="nsew", padx=4, pady=4)
     card.grid_columnconfigure(0, weight=1)
 
-    # Borde izquierdo de color (simulado con un frame estrecho)
-    accent_bar = ctk.CTkFrame(card, width=3, fg_color=color, corner_radius=0)
-    accent_bar.place(x=0, y=0, relheight=1)
+    # Badge cuadrado
+    badge_f = ctk.CTkFrame(card, width=40, height=40, fg_color=color, corner_radius=8)
+    badge_f.grid(row=0, column=0, padx=(12, 0), pady=(12, 6), sticky="w")
+    badge_f.grid_propagate(False)
+    if badge_icon:
+        ctk.CTkLabel(badge_f, text="", image=badge_icon).place(
+            relx=0.5, rely=0.5, anchor="center")
 
-    inner = ctk.CTkFrame(card, fg_color="transparent")
-    inner.grid(row=0, column=0, sticky="nsew", padx=(10, 10), pady=10)
-    inner.grid_columnconfigure(0, weight=1)
-
-    ctk.CTkLabel(inner, text=label, font=FONT_SMALL,
-                 text_color=TEXT_SECONDARY, anchor="w").grid(row=0, column=0, sticky="w")
-    ctk.CTkLabel(inner, text=str(value),
-                 font=("Segoe UI", 26, "bold"), text_color=color,
-                 anchor="w").grid(row=1, column=0, sticky="w")
-    if sub:
-        ctk.CTkLabel(inner, text=sub, font=("Segoe UI", 9),
-                     text_color=TEXT_SECONDARY, anchor="w").grid(row=2, column=0, sticky="w")
-    return card
+    ctk.CTkLabel(card, text=label, font=("Segoe UI", 9),
+                 text_color=color, anchor="w").grid(row=1, column=0, padx=12, sticky="w")
+    ctk.CTkLabel(card, text=str(value), font=("Segoe UI", 20, "bold"),
+                 text_color=color, anchor="w").grid(row=2, column=0, padx=12, sticky="w")
+    ctk.CTkLabel(card, text=sub, font=("Segoe UI", 8),
+                 text_color=TEXT_SECONDARY, anchor="w").grid(
+        row=3, column=0, padx=12, pady=(0, 12), sticky="w")
 
 
-def _quick_btn(parent, label: str, sublabel: str, color: str,
-               row: int, col: int, command):
-    """Botón de acceso rápido con fondo sólido de color de módulo."""
+def _quick_btn(parent, label, sublabel, color, icon_img, row, col, command):
     hover = darken(color, 0.88)
-
     btn_f = ctk.CTkFrame(parent, fg_color=color, corner_radius=12)
-    btn_f.grid(row=row, column=col, sticky="nsew", padx=5, pady=4)
-    btn_f.grid_columnconfigure(0, weight=1)
+    btn_f.grid(row=row, column=col, sticky="nsew", padx=4, pady=4)
     btn_f.configure(cursor="hand2")
+    btn_f.grid_columnconfigure(0, weight=1)
 
-    inner = ctk.CTkFrame(btn_f, fg_color="transparent")
-    inner.grid(row=0, column=0, sticky="nsew", padx=14, pady=12)
-    inner.grid_columnconfigure(0, weight=1)
+    # Ícono vectorial en badge cuadrado pequeño
+    if icon_img:
+        ico_f = ctk.CTkFrame(btn_f, width=32, height=32,
+                             fg_color=darken(color, 0.80), corner_radius=6)
+        ico_f.grid(row=0, column=0, padx=(12, 0), pady=(10, 4), sticky="w")
+        ico_f.grid_propagate(False)
+        ctk.CTkLabel(ico_f, text="", image=icon_img).place(
+            relx=0.5, rely=0.5, anchor="center")
+    else:
+        ctk.CTkFrame(btn_f, width=32, height=32,
+                     fg_color=darken(color, 0.80), corner_radius=6).grid(
+            row=0, column=0, padx=(12, 0), pady=(10, 4), sticky="w")
 
-    ctk.CTkLabel(inner, text=label,
-                 font=("Segoe UI", 13, "bold"), text_color="#FFFFFF",
-                 anchor="w").grid(row=0, column=0, sticky="w")
-    ctk.CTkLabel(inner, text=sublabel,
-                 font=("Segoe UI", 10), text_color="#C7D2FE",  # blanco suave — antes rgba(255,255,255,0.75)
-                 anchor="w").grid(row=1, column=0, sticky="w")
+    ctk.CTkLabel(btn_f, text=label, font=("Segoe UI", 11, "bold"),
+                 text_color="#FFFFFF", anchor="w").grid(
+        row=1, column=0, padx=12, sticky="w")
+    ctk.CTkLabel(btn_f, text=sublabel, font=("Segoe UI", 9),
+                 text_color="#C7D2FE", anchor="w").grid(
+        row=2, column=0, padx=12, pady=(0, 10), sticky="w")
 
-    arrow = ctk.CTkLabel(inner, text="→",
-                         font=("Segoe UI", 16), text_color="#94A3B8")  # antes rgba(255,255,255,0.6)
-    arrow.grid(row=0, column=1, rowspan=2, padx=(8, 0))
-
-    # Hacer todo el frame clickeable
-    for widget in [btn_f, inner] + inner.winfo_children():
-        widget.bind("<Button-1>", lambda e, cmd=command: cmd())
-        widget.bind("<Enter>",
-                    lambda e, f=btn_f, c=hover: f.configure(fg_color=c))
-        widget.bind("<Leave>",
-                    lambda e, f=btn_f, c=color: f.configure(fg_color=c))
+    for w in [btn_f] + list(btn_f.winfo_children()):
+        w.bind("<Button-1>", lambda e, cmd=command: cmd())
+        w.bind("<Enter>",  lambda e, f=btn_f, c=hover:  f.configure(fg_color=c))
+        w.bind("<Leave>",  lambda e, f=btn_f, c=color:  f.configure(fg_color=c))
 
 
-def _legend_dot(parent, color, text, col):
-    f = ctk.CTkFrame(parent, fg_color="transparent")
-    f.grid(row=0, column=col, padx=(0, 14))
-    ctk.CTkFrame(f, width=8, height=8, fg_color=color, corner_radius=2).pack(
-        side="left", padx=(0, 4))
-    ctk.CTkLabel(f, text=text, font=("Segoe UI", 9),
-                 text_color=TEXT_SECONDARY).pack(side="left")
+def _chart_header(parent, icons):
+    hdr = ctk.CTkFrame(parent, fg_color="transparent")
+    hdr.grid(row=0, column=0, sticky="ew", padx=16, pady=(14, 6))
+
+    ctk.CTkFrame(hdr, width=3, height=18,
+                 fg_color=UMAG_PURPLE, corner_radius=2).pack(side="left", padx=(0, 8))
+    ctk.CTkLabel(hdr, text="Asistencia Semanal",
+                 font=FONT_SUBHEAD, text_color=TEXT_PRIMARY).pack(side="left")
+
+    legend_f = ctk.CTkFrame(hdr, fg_color="transparent")
+    legend_f.pack(side="right")
+    ctk.CTkFrame(legend_f, width=10, height=10,
+                 fg_color=UMAG_PURPLE, corner_radius=2).pack(side="left", padx=(0, 4))
+    ctk.CTkLabel(legend_f, text="Días pasados",
+                 font=("Segoe UI", 9), text_color=TEXT_SECONDARY).pack(side="left", padx=(0, 10))
+    ctk.CTkFrame(legend_f, width=10, height=10,
+                 fg_color="#D4D8F0", corner_radius=2).pack(side="left", padx=(0, 4))
+    ctk.CTkLabel(legend_f, text="Próximos",
+                 font=("Segoe UI", 9), text_color=TEXT_SECONDARY).pack(side="left")

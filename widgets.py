@@ -57,31 +57,43 @@ def make_section_header(parent, text: str, row: int = 0,
 
 def make_stat_card(parent, badge_icon, title: str, value, color: str,
                    row: int = 0, col: int = 0) -> ctk.CTkFrame:
-    """Tarjeta de estadística con badge, título y valor."""
-    card = make_card(parent)
+    """Tarjeta de estadística con badge cuadrado, título y valor."""
+    card = ctk.CTkFrame(parent, fg_color=CARD_BG, corner_radius=12,
+                        border_width=1, border_color=color)
     card.grid(row=row, column=col, sticky="nsew", padx=5, pady=5)
     card.grid_columnconfigure(1, weight=1)
 
+    # Badge cuadrado con fondo de color
+    badge_f = ctk.CTkFrame(card, width=42, height=42,
+                           fg_color=color, corner_radius=8)
+    badge_f.grid(row=0, column=0, rowspan=2, padx=(14, 10), pady=14)
+    badge_f.grid_propagate(False)
     if badge_icon is not None:
-        ctk.CTkLabel(card, text="", image=badge_icon).grid(
-            row=0, column=0, rowspan=2, padx=12, pady=12)
+        ctk.CTkLabel(badge_f, text="", image=badge_icon).place(
+            relx=0.5, rely=0.5, anchor="center")
 
     ctk.CTkLabel(card, text=title, font=FONT_SMALL,
                  text_color=TEXT_SECONDARY, anchor="w").grid(
-        row=0, column=1, sticky="sw", padx=(0, 12), pady=(12, 1))
-
+        row=0, column=1, sticky="sw", padx=(0, 12), pady=(14, 1))
     ctk.CTkLabel(card, text=str(value), font=("Segoe UI", 22, "bold"),
                  text_color=color, anchor="w").grid(
-        row=1, column=1, sticky="nw", padx=(0, 12), pady=(0, 12))
+        row=1, column=1, sticky="nw", padx=(0, 12), pady=(0, 14))
     return card
 
 
 def make_mini_stat(parent, badge_icon, label: str, value, color: str, col: int):
-    """Estadística pequeña para paneles compactos."""
+    """Estadística pequeña para paneles compactos — badge cuadrado."""
     frame = ctk.CTkFrame(parent, fg_color="transparent")
     frame.grid(row=0, column=col, padx=12, pady=10)
+
+    badge_f = ctk.CTkFrame(frame, width=36, height=36,
+                           fg_color=color, corner_radius=8)
+    badge_f.pack(pady=(0, 4))
+    badge_f.pack_propagate(False)
     if badge_icon is not None:
-        ctk.CTkLabel(frame, text="", image=badge_icon).pack(pady=(0, 3))
+        ctk.CTkLabel(badge_f, text="", image=badge_icon).place(
+            relx=0.5, rely=0.5, anchor="center")
+
     ctk.CTkLabel(frame, text=label, font=FONT_SMALL,
                  text_color=TEXT_SECONDARY).pack()
     ctk.CTkLabel(frame, text=str(value), font=("Segoe UI", 17, "bold"),
@@ -89,28 +101,53 @@ def make_mini_stat(parent, badge_icon, label: str, value, color: str, col: int):
 
 
 def make_treeview_style(style_name: str):
-    """Aplica estilo visual consistente a un Treeview."""
+    """Aplica estilo visual a Treeview con cabecera destacada y filas alternadas."""
     style = ttk.Style()
     style.theme_use('clam')
+
+    # Tabla principal
     style.configure(
         f"{style_name}.Treeview",
         background=CARD_BG,
         fieldbackground=CARD_BG,
         foreground=TEXT_PRIMARY,
         font=("Segoe UI", 11),
-        rowheight=32,
-        borderwidth=0,
-    )
-    style.configure(
-        f"{style_name}.Treeview.Heading",
-        background="#F1F5F9",
-        foreground="#374151",
-        font=("Segoe UI", 10, "bold"),
+        rowheight=34,
         borderwidth=0,
         relief="flat",
     )
-    style.map(f"{style_name}.Treeview",
-              background=[("selected", "#EEF2FF")])
+    # Cabecera con fondo indigo suave
+    style.configure(
+        f"{style_name}.Treeview.Heading",
+        background="#EEF2FF",
+        foreground=UMAG_PURPLE,
+        font=("Segoe UI", 10, "bold"),
+        borderwidth=0,
+        relief="flat",
+        padding=(8, 6),
+    )
+    style.map(
+        f"{style_name}.Treeview.Heading",
+        background=[("active", "#E0E7FF")],
+        relief=[("active", "flat")],
+    )
+    style.map(
+        f"{style_name}.Treeview",
+        background=[("selected", "#EEF2FF")],
+        foreground=[("selected", UMAG_PURPLE)],
+    )
+
+
+def apply_table_stripes(tree: "ttk.Treeview", stripe_color: str = "#F8FAFF"):
+    """Aplica filas alternadas (zebra) a un Treeview existente."""
+    tree.tag_configure("even", background=stripe_color)
+    tree.tag_configure("odd",  background=CARD_BG)
+    for i, iid in enumerate(tree.get_children()):
+        current_tags = list(tree.item(iid, "tags"))
+        # Quitar tags de stripe previos
+        current_tags = [t for t in current_tags if t not in ("even", "odd")]
+        current_tags.append("even" if i % 2 == 0 else "odd")
+        tree.item(iid, tags=current_tags)
 
 
 def darken(hex_color: str, factor: float = 0.82) -> str:

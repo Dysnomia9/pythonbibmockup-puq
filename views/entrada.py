@@ -7,8 +7,16 @@ import customtkinter as ctk
 from tkinter import ttk, messagebox
 from datetime import datetime
 from config import *
-from widgets import (make_card, make_mini_stat, make_treeview_style,
-                     make_section_header, darken, icon_or_none)
+from widgets import (make_card, make_treeview_style,
+                     apply_table_stripes, make_section_header, darken, icon_or_none)
+
+
+# Colores de fondo para cada stat card
+_STAT_BACKGROUNDS = [
+    ("#EEF2FF", UMAG_PURPLE),   # En Sala   — índigo suave
+    ("#F0FDFA", ACCENT_TEAL),   # Entradas  — verde agua suave
+    ("#F0FDF4", SUCCESS),       # Disponibles — verde suave
+]
 
 
 def build(parent: ctk.CTkFrame, icons: dict,
@@ -24,31 +32,41 @@ def build(parent: ctk.CTkFrame, icons: dict,
     left.grid_columnconfigure(0, weight=1)
     left.grid_rowconfigure(2, weight=1)
 
-    # Mini stats aforo
-    aforo_card = make_card(left)
-    aforo_card.grid(row=0, column=0, sticky="ew", pady=(0, 8))
-    aforo_card.grid_columnconfigure((0, 1, 2), weight=1)
-    make_mini_stat(aforo_card, icon_or_none(icons, "badge_users"), "En Sala",
-                   f"{personas_en_sala}/{capacidad}", UMAG_PURPLE, 0)
-    make_mini_stat(aforo_card, icon_or_none(icons, "badge_door"),  "Entradas Hoy",
-                   "87", ACCENT_TEAL, 1)
-    make_mini_stat(aforo_card, icon_or_none(icons, "badge_check"), "Disponibles",
-                   f"{capacidad - personas_en_sala}", SUCCESS, 2)
+    # ── Mini stats con fondo de color ────────────────────────────
+    stats_row = ctk.CTkFrame(left, fg_color="transparent")
+    stats_row.grid(row=0, column=0, sticky="ew", pady=(0, 8))
+    stats_row.grid_columnconfigure((0, 1, 2), weight=1)
 
-    # Formulario RUT
-    rut_card = make_card(left)
+    stat_data = [
+        ("badge_users", "En Sala",       f"{personas_en_sala}/{capacidad}"),
+        ("badge_door",  "Entradas Hoy",  "87"),
+        ("badge_check", "Disponibles",   f"{capacidad - personas_en_sala}"),
+    ]
+    for col, ((badge_key, label, value), (bg, color)) in enumerate(
+            zip(stat_data, _STAT_BACKGROUNDS)):
+        _stat_box(stats_row, icon_or_none(icons, badge_key),
+                  label, value, color, bg, col)
+
+    # ── Formulario RUT ────────────────────────────────────────────
+    rut_card = ctk.CTkFrame(left, fg_color="#1E1B4B", corner_radius=12)
     rut_card.grid(row=1, column=0, sticky="ew", pady=(0, 8))
     rut_card.grid_columnconfigure(1, weight=1)
 
-    make_section_header(rut_card, "Registrar Entrada", row=0, colspan=4)
+    ctk.CTkLabel(rut_card, text="Registrar Entrada",
+                 font=("Segoe UI", 13, "bold"), text_color="#C7D2FE").grid(
+        row=0, column=0, columnspan=4, padx=20, pady=(14, 8), sticky="w")
 
     ctk.CTkLabel(rut_card, text="RUT:", font=FONT_SUBHEAD,
-                 text_color=TEXT_PRIMARY).grid(row=1, column=0, padx=(20, 8), pady=(0, 14))
+                 text_color="#E0E7FF").grid(row=1, column=0, padx=(20, 8), pady=(0, 14))
 
     rut_entry = ctk.CTkEntry(
         rut_card, placeholder_text="Ej: 12.345.678-5",
         height=40, font=("Consolas", 14),
-        corner_radius=10, border_color=BORDER_COLOR,
+        corner_radius=10,
+        border_color="#4F46E5",
+        fg_color="#2D2A6E",
+        text_color="#F0F0FF",
+        placeholder_text_color="#818CF8",
     )
     rut_entry.grid(row=1, column=1, sticky="ew", padx=5, pady=(0, 14))
 
@@ -56,6 +74,8 @@ def build(parent: ctk.CTkFrame, icons: dict,
         from config import format_rut
         val = rut_entry.get()
         fmt = format_rut(val)
+        if len(fmt) > 12:
+            fmt = fmt[:12]
         rut_entry.delete(0, "end")
         rut_entry.insert(0, fmt)
 
@@ -93,11 +113,11 @@ def build(parent: ctk.CTkFrame, icons: dict,
         image=_ic_qr, compound="left" if _ic_qr else "none",
         font=("Segoe UI", 12),
         width=110, height=40, corner_radius=10,
-        fg_color=UMAG_PURPLE, hover_color=darken(UMAG_PURPLE),
+        fg_color="#4F46E5", hover_color=darken("#4F46E5"),
         command=lambda: messagebox.showinfo("QR", "Simulación: Escáner QR activado."),
     ).grid(row=1, column=3, padx=(5, 20), pady=(0, 14))
 
-    # Tabla de entradas
+    # ── Tabla de entradas ─────────────────────────────────────────
     table_card = make_card(left)
     table_card.grid(row=2, column=0, sticky="nsew", pady=(0, 4))
     table_card.grid_columnconfigure(0, weight=1)
@@ -114,16 +134,17 @@ def build(parent: ctk.CTkFrame, icons: dict,
     cols = ("N°", "Hora", "RUT", "Nombre", "Vía")
     tree = ttk.Treeview(tf, columns=cols, show="headings",
                         style="Entrada.Treeview", height=8)
-    tree.heading("N°",     text="N°");     tree.column("N°",     width=46, anchor="center")
-    tree.heading("Hora",   text="Hora");   tree.column("Hora",   width=70, anchor="center")
-    tree.heading("RUT",    text="RUT");    tree.column("RUT",    width=130, anchor="center")
-    tree.heading("Nombre", text="Nombre"); tree.column("Nombre", width=200)
-    tree.heading("Vía",    text="Vía");    tree.column("Vía",    width=110, anchor="center")
+    tree.heading("N°",     text="#");       tree.column("N°",     width=40,  anchor="center")
+    tree.heading("Hora",   text="Hora");    tree.column("Hora",   width=70,  anchor="center")
+    tree.heading("RUT",    text="RUT");     tree.column("RUT",    width=130, anchor="center")
+    tree.heading("Nombre", text="Nombre");  tree.column("Nombre", width=200)
+    tree.heading("Vía",    text="Vía");     tree.column("Vía",    width=110, anchor="center")
 
     from config import MOCK_ENTRADAS
     for e in MOCK_ENTRADAS:
         tree.insert("", "end", values=(e["id"], e["hora"], e["rut"], e["nombre"], e["via"]))
 
+    apply_table_stripes(tree)
     tree.grid(row=0, column=0, sticky="nsew")
     sb = ttk.Scrollbar(tf, orient="vertical", command=tree.yview)
     sb.grid(row=0, column=1, sticky="ns")
@@ -135,7 +156,6 @@ def build(parent: ctk.CTkFrame, icons: dict,
     right.grid_propagate(False)
     right.grid_columnconfigure(0, weight=1)
 
-    # Header coloreado
     hdr = ctk.CTkFrame(right, fg_color=UMAG_PURPLE, corner_radius=14, height=44)
     hdr.grid(row=0, column=0, sticky="ew", padx=0, pady=0)
     hdr.grid_propagate(False)
@@ -152,7 +172,6 @@ def build(parent: ctk.CTkFrame, icons: dict,
                  text_color=TEXT_SECONDARY).grid(row=1, column=0, pady=(14, 0))
     ctk.CTkLabel(right, text="395", font=("Consolas", 36, "bold"),
                  text_color=UMAG_PURPLE).grid(row=2, column=0)
-
     _sep(3)
 
     ctk.CTkLabel(right, text="AFORO ACTUAL", font=("Segoe UI", 10, "bold"),
@@ -169,7 +188,6 @@ def build(parent: ctk.CTkFrame, icons: dict,
                               progress_color=bar_color, fg_color=UMAG_LIGHT, width=190)
     bar.grid(row=7, column=0, pady=(0, 10))
     bar.set(pct)
-
     _sep(8)
 
     _ic_circle = icon_or_none(icons, "circle_green")
@@ -179,11 +197,36 @@ def build(parent: ctk.CTkFrame, icons: dict,
         ctk.CTkLabel(st, text="", image=_ic_circle).pack(side="left", padx=(0, 6))
     ctk.CTkLabel(st, text="OPERATIVO", font=("Segoe UI", 14, "bold"),
                  text_color=SUCCESS).pack(side="left")
-
     _sep(10)
+
     ctk.CTkLabel(right, text="ÚLTIMO INGRESO", font=("Segoe UI", 10, "bold"),
                  text_color=UMAG_INDIGO).grid(row=11, column=0, pady=(10, 2))
     ctk.CTkLabel(right, text="María González",
                  font=("Segoe UI", 12, "bold"), text_color=TEXT_PRIMARY).grid(row=12, column=0)
     ctk.CTkLabel(right, text="10:15 — Manual",
                  font=FONT_SMALL, text_color=TEXT_SECONDARY).grid(row=13, column=0, pady=(0, 14))
+
+
+# ── Helper: stat box cuadrado con fondo de color ─────────────────────────────
+def _stat_box(parent, badge_icon, label: str, value, color: str, bg: str, col: int):
+    """Tarjeta stat cuadrada con fondo de color suave, badge cuadrado y valor."""
+    card = ctk.CTkFrame(parent, fg_color=bg, corner_radius=12,
+                        border_width=1, border_color=color)
+    card.grid(row=0, column=col, sticky="nsew", padx=5, pady=4)
+    card.grid_columnconfigure(0, weight=1)
+
+    # Badge cuadrado (sin imagen CTk si no carga, fallback a frame cuadrado)
+    badge_f = ctk.CTkFrame(card, width=42, height=42,
+                           fg_color=color, corner_radius=8)
+    badge_f.grid(row=0, column=0, padx=(14, 0), pady=(14, 6), sticky="w")
+    badge_f.grid_propagate(False)
+    if badge_icon is not None:
+        ctk.CTkLabel(badge_f, text="", image=badge_icon).place(
+            relx=0.5, rely=0.5, anchor="center")
+
+    ctk.CTkLabel(card, text=label, font=("Segoe UI", 10),
+                 text_color=color, anchor="w").grid(
+        row=1, column=0, padx=14, sticky="w")
+    ctk.CTkLabel(card, text=str(value), font=("Segoe UI", 20, "bold"),
+                 text_color=color, anchor="w").grid(
+        row=2, column=0, padx=14, pady=(0, 14), sticky="w")
