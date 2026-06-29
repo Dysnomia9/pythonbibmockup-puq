@@ -211,7 +211,7 @@ def build(parent: ctk.CTkFrame, icons: dict,
 def _stat_box(parent, badge_icon, label: str, value, color: str, bg: str, col: int):
     """Tarjeta stat cuadrada con fondo de color suave, badge cuadrado y valor."""
     card = ctk.CTkFrame(parent, fg_color=bg, corner_radius=12,
-                        border_width=1, border_color=color)
+                        border_width=1, border_color=BORDER_COLOR)
     card.grid(row=0, column=col, sticky="nsew", padx=5, pady=4)
     card.grid_columnconfigure(0, weight=1)
 

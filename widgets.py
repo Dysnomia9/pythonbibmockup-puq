@@ -59,7 +59,7 @@ def make_stat_card(parent, badge_icon, title: str, value, color: str,
                    row: int = 0, col: int = 0) -> ctk.CTkFrame:
     """Tarjeta de estadística con badge cuadrado, título y valor."""
     card = ctk.CTkFrame(parent, fg_color=CARD_BG, corner_radius=12,
-                        border_width=1, border_color=color)
+                        border_width=1, border_color=BORDER_COLOR)
     card.grid(row=row, column=col, sticky="nsew", padx=5, pady=5)
     card.grid_columnconfigure(1, weight=1)
 

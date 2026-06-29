@@ -145,7 +145,7 @@ def _cell_libre(scroll, icons, app_root, sala, bloque, row, col):
         scroll,
         text="✓ Libre",
         font=("Segoe UI", 9, "bold"),
-        height=32, corner_radius=6,
+        height=30, corner_radius=4,
         fg_color=_COLOR_LIBRE,
         hover_color=_COLOR_HOV_LIB,
         text_color="white",
@@ -162,7 +162,7 @@ def _cell_ocupada(scroll, res, sala, row, col):
         scroll,
         text=f"● {initials}",
         font=("Segoe UI", 9, "bold"),
-        height=32, corner_radius=6,
+        height=30, corner_radius=4,
         fg_color=_COLOR_OCUPADO,
         hover_color=_COLOR_HOV_OCP,
         text_color="white",
@@ -276,9 +276,9 @@ def _reservar(app_root, icons, sala: dict, bloque: str):
 
 # ── Helper: KPI card cuadrada con fondo de color ─────────────────────────────
 def _kpi_colored(parent, badge_icon, label: str, value, color: str, bg: str, col: int):
-    """Tarjeta KPI con fondo suave, borde de color y badge cuadrado."""
+    """Tarjeta KPI con fondo suave, borde sutil y badge cuadrado."""
     card = ctk.CTkFrame(parent, fg_color=bg, corner_radius=12,
-                        border_width=1, border_color=color)
+                        border_width=1, border_color=BORDER_COLOR)
     card.grid(row=0, column=col, sticky="nsew", padx=5, pady=4)
     card.grid_columnconfigure(0, weight=1)
 
