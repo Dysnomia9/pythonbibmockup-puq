@@ -58,8 +58,12 @@ def main():
 
     app = BibliotecaUMAG()
 
+    # FIX: reconfiguramos row 0 DESPUÉS de instanciar para asegurar que
+    # minsize=52 se mantenga y que el weight=0 no colapse la topbar
+    app.grid_rowconfigure(0, weight=0, minsize=52)
+
     # Status bar en row=2 (row=0 topnav, row=1 contenido)
-    app.grid_rowconfigure(2, weight=0)
+    app.grid_rowconfigure(2, weight=0, minsize=24)
     status = StatusBar(app)
     status.grid(row=2, column=0, sticky="ew")
 

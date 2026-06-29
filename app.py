@@ -1,16 +1,17 @@
 # -*- coding: utf-8 -*-
 """
 app.py — Ventana principal con TOPNAV horizontal — Sistema Bibliotecario UMAG
-Fixes 2026:
-  - Topnav siempre visible (layout grid corregido, columnas explícitas)
-  - Cache de vistas: no se destruye/recrea en cada cambio de pestaña → sin parpadeo
-  - Salas no congela la UI (el frame cacheado persiste; after_idle solo corre 1 vez)
+Fix definitivo CTk 6.x:
+  - Nav usa tk.Frame nativo (evita bug de canvas interno de CTkFrame en CTk 6.x)
+  - grid_rowconfigure con minsize=52 en row 0
+  - Cache de vistas sin destroy/recreate
 """
 
 import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+import tkinter as tk
 import customtkinter as ctk
 from datetime import datetime
 from config import *
@@ -32,7 +33,6 @@ class BibliotecaUMAG(ctk.CTk):
         self.icons = {}
         self._try_load_icons()
 
-        # Cache de frames de cada módulo (se construyen la 1ra vez, luego se ocultan/muestran)
         self._view_cache: dict = {
             "dashboard": None,
             "entrada":   None,
@@ -47,7 +47,7 @@ class BibliotecaUMAG(ctk.CTk):
         self._show_module("dashboard")
 
     # ----------------------------------------------------------
-    # ICONS (opcional — no rompe si el módulo no existe)
+    # ICONS
     # ----------------------------------------------------------
     def _try_load_icons(self):
         try:
@@ -92,7 +92,7 @@ class BibliotecaUMAG(ctk.CTk):
             ]}
 
     # ----------------------------------------------------------
-    # ATAJOS DE TECLADO
+    # ATAJOS
     # ----------------------------------------------------------
     def _bind_shortcuts(self):
         self.bind("<F1>", lambda e: self._show_module("dashboard"))
@@ -104,9 +104,8 @@ class BibliotecaUMAG(ctk.CTk):
     # ESQUELETO UI
     # ----------------------------------------------------------
     def _build_ui(self):
-        # row 0 = topnav (altura fija, NO expande), row 1 = contenido (expande)
         self.grid_columnconfigure(0, weight=1)
-        self.grid_rowconfigure(0, weight=0)   # <-- FIX: topnav no expande
+        self.grid_rowconfigure(0, weight=0, minsize=52)
         self.grid_rowconfigure(1, weight=1)
 
         self._build_topnav()
@@ -117,24 +116,28 @@ class BibliotecaUMAG(ctk.CTk):
         self.module_frame.grid_rowconfigure(0, weight=1)
 
     # ----------------------------------------------------------
-    # TOPNAV HORIZONTAL
+    # TOPNAV — usa tk.Frame nativo como contenedor raíz
+    # CTk 6.x: CTkFrame con canvas interno ignora grid_propagate(False)
+    # tk.Frame nativo respeta height=52 + grid_propagate(False) siempre
     # ----------------------------------------------------------
     def _build_topnav(self):
-        nav = ctk.CTkFrame(self, height=52, fg_color=NAV_BG, corner_radius=0)
+        # ── Contenedor nativo — garantiza 52px sin importar CTk version ──
+        nav = tk.Frame(self, height=52, bg=NAV_BG)
         nav.grid(row=0, column=0, sticky="ew")
         nav.grid_propagate(False)
 
-        # FIX: columnas explícitas — col 0 brand (fijo), col 1 nav (expande), col 2 derecha (fijo)
-        nav.grid_columnconfigure(0, weight=0, minsize=200)
+        # Columnas: brand fijo | nav expande | derecha fijo
+        nav.grid_columnconfigure(0, weight=0, minsize=210)
         nav.grid_columnconfigure(1, weight=1)
-        nav.grid_columnconfigure(2, weight=0)
+        nav.grid_columnconfigure(2, weight=0, minsize=320)
 
         # ── Brand ─────────────────────────────────────────────
-        brand = ctk.CTkFrame(nav, fg_color="transparent")
+        brand = tk.Frame(nav, bg=NAV_BG)
         brand.grid(row=0, column=0, sticky="nsew", padx=(14, 0))
 
-        spines_f = ctk.CTkFrame(brand, fg_color="transparent")
+        spines_f = tk.Frame(brand, bg=NAV_BG)
         spines_f.pack(side="left", padx=(0, 10), pady=12)
+
         spine_heights = [18, 12, 22, 10, 16, 8]
         for color, h in zip(SPINE_COLORS, spine_heights):
             ctk.CTkFrame(
@@ -142,20 +145,22 @@ class BibliotecaUMAG(ctk.CTk):
                 fg_color=color, corner_radius=1,
             ).pack(side="left", padx=1, pady=(22 - h) // 2)
 
-        name_f = ctk.CTkFrame(brand, fg_color="transparent")
-        name_f.pack(side="left", pady=0)
+        name_f = tk.Frame(brand, bg=NAV_BG)
+        name_f.pack(side="left")
         ctk.CTkLabel(
             name_f, text="Biblioteca UMAG",
             font=("Segoe UI", 13, "bold"), text_color="#F9FAFB",
+            fg_color=NAV_BG,
         ).pack(anchor="w")
         ctk.CTkLabel(
             name_f, text="SISTEMA BIBLIOTECARIO",
             font=("Segoe UI", 8), text_color=NAV_TEXT,
+            fg_color=NAV_BG,
         ).pack(anchor="w")
 
         # ── Ítems de navegación ───────────────────────────────
-        nav_items_f = ctk.CTkFrame(nav, fg_color="transparent")
-        nav_items_f.grid(row=0, column=1, sticky="ns", padx=6)
+        nav_items_f = tk.Frame(nav, bg=NAV_BG)
+        nav_items_f.grid(row=0, column=1, sticky="ns")
 
         NAV_ITEMS = [
             ("dashboard", "Dashboard", "F1"),
@@ -166,14 +171,14 @@ class BibliotecaUMAG(ctk.CTk):
             ("usuarios",  "Usuarios",  ""),
         ]
 
-        self.nav_buttons = {}
+        self.nav_buttons    = {}
         self._nav_indicators = {}
 
         for key, label, shortcut in NAV_ITEMS:
-            item_f = ctk.CTkFrame(nav_items_f, fg_color="transparent")
+            item_f = tk.Frame(nav_items_f, bg=NAV_BG)
             item_f.pack(side="left")
 
-            indicator = ctk.CTkFrame(item_f, height=2, fg_color="transparent", corner_radius=0)
+            indicator = tk.Frame(item_f, height=2, bg=NAV_BG)
             indicator.pack(side="bottom", fill="x")
             self._nav_indicators[key] = indicator
 
@@ -196,10 +201,10 @@ class BibliotecaUMAG(ctk.CTk):
             self.nav_buttons[key] = btn
 
         # ── Zona derecha ──────────────────────────────────────
-        right_f = ctk.CTkFrame(nav, fg_color="transparent")
-        right_f.grid(row=0, column=2, sticky="ns", padx=(0, 14))
+        right_f = tk.Frame(nav, bg=NAV_BG)
+        right_f.grid(row=0, column=2, sticky="nsew", padx=(0, 14))
 
-        search_wrap = ctk.CTkFrame(right_f, fg_color="transparent")
+        search_wrap = tk.Frame(right_f, bg=NAV_BG)
         search_wrap.pack(side="left", padx=(0, 12), pady=11)
         ctk.CTkEntry(
             search_wrap,
@@ -213,24 +218,27 @@ class BibliotecaUMAG(ctk.CTk):
             font=("Segoe UI", 11),
         ).pack()
 
-        ctk.CTkFrame(right_f, width=1, fg_color="#374151").pack(
+        tk.Frame(right_f, width=1, bg="#374151").pack(
             side="left", fill="y", pady=10, padx=4)
 
-        clock_f = ctk.CTkFrame(right_f, fg_color="transparent")
-        clock_f.pack(side="left", padx=(4, 12), pady=0)
+        clock_f = tk.Frame(right_f, bg=NAV_BG)
+        clock_f.pack(side="left", padx=(4, 12))
 
         self.nav_date_label = ctk.CTkLabel(
             clock_f, text="",
             font=("Consolas", 10), text_color=NAV_TEXT,
+            fg_color=NAV_BG,
         )
         self.nav_date_label.pack()
         self.nav_time_label = ctk.CTkLabel(
             clock_f, text="",
             font=("Consolas", 11, "bold"), text_color="#E5E7EB",
+            fg_color=NAV_BG,
         )
         self.nav_time_label.pack()
         self._update_clock()
 
+        # Notificación
         notif_f = ctk.CTkFrame(
             right_f, width=30, height=30,
             fg_color="#1F2937", corner_radius=8,
@@ -245,6 +253,7 @@ class BibliotecaUMAG(ctk.CTk):
         ctk.CTkFrame(notif_f, width=8, height=8,
                      fg_color="#E11D48", corner_radius=4).place(relx=0.75, rely=0.18)
 
+        # Avatar
         avatar_f = ctk.CTkFrame(
             right_f, width=30, height=30,
             fg_color=UMAG_PURPLE, corner_radius=15,
@@ -266,7 +275,7 @@ class BibliotecaUMAG(ctk.CTk):
         self.after(1000, self._update_clock)
 
     # ----------------------------------------------------------
-    # NAVEGACIÓN con cache — SIN destroy/recreate
+    # NAVEGACIÓN
     # ----------------------------------------------------------
     MODULE_COLOR = {
         "dashboard": UMAG_PURPLE,
@@ -278,7 +287,6 @@ class BibliotecaUMAG(ctk.CTk):
     }
 
     def _build_view(self, module_name: str) -> ctk.CTkFrame:
-        """Construye el frame de un módulo por primera (y única) vez."""
         frame = ctk.CTkFrame(self.module_frame, fg_color="transparent")
         frame.grid_columnconfigure(0, weight=1)
         frame.grid_rowconfigure(0, weight=1)
@@ -304,21 +312,18 @@ class BibliotecaUMAG(ctk.CTk):
         return frame
 
     def _show_module(self, module_name: str):
-        # Actualizar botones del nav
         for key, btn in self.nav_buttons.items():
             if key == module_name:
                 btn.configure(text_color=NAV_TEXT_ACTIVE, fg_color=NAV_ACTIVE_BG)
                 self._nav_indicators[key].configure(
-                    fg_color=self.MODULE_COLOR.get(key, NAV_ACTIVE_BORDER))
+                    bg=self.MODULE_COLOR.get(key, NAV_ACTIVE_BORDER))
             else:
                 btn.configure(text_color=NAV_TEXT, fg_color="transparent")
-                self._nav_indicators[key].configure(fg_color="transparent")
+                self._nav_indicators[key].configure(bg=NAV_BG)
 
-        # Construir vista solo si no existe todavía
         if self._view_cache[module_name] is None:
             self._view_cache[module_name] = self._build_view(module_name)
 
-        # Ocultar todos, mostrar el activo — sin destruir nada
         for key, frame in self._view_cache.items():
             if frame is not None:
                 frame.grid_remove()
