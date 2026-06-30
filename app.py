@@ -44,7 +44,25 @@ class BibliotecaUMAG(ctk.CTk):
 
         self._build_ui()
         self._bind_shortcuts()
-        self._show_module("dashboard")
+
+        # FIX retraso/parpadeo al abrir (F1 / arranque):
+        # Antes _show_module("dashboard") se llamaba aquí mismo, DENTRO de
+        # __init__, es decir ANTES de que mainloop() arrancara. Tkinter no
+        # pinta nada en pantalla hasta que __init__ termina y entra al loop
+        # de eventos, así que la ventana se hacía visible y en el MISMO
+        # instante debía construir todo el dashboard (KPIs, accesos rápidos,
+        # gráfico de barras, donut, actividad con scroll). El usuario veía
+        # la ventana vacía/con topnav a medio pintar durante ese lapso, y
+        # luego todo aparecía de golpe -> esa es la sensación de retraso +
+        # parpadeo al abrir.
+        #
+        # Con after(15, ...) dejamos que mainloop() haga su primer ciclo de
+        # render: la ventana y el topnav quedan completamente pintados y
+        # visibles, y el dashboard se construye un instante después sobre
+        # una UI que el usuario ya está viendo, en vez de una pantalla en
+        # blanco. 15ms es imperceptible para el usuario pero le da a
+        # Tkinter el respiro que necesita para completar el primer frame.
+        self.after(15, lambda: self._show_module("dashboard"))
 
     # ----------------------------------------------------------
     # ICONS
@@ -126,10 +144,9 @@ class BibliotecaUMAG(ctk.CTk):
         nav.grid(row=0, column=0, sticky="ew")
         nav.grid_propagate(False)
 
-        # Columnas: brand fijo | nav expande | derecha fijo
+        # Columnas: brand fijo | nav expande (ocupa todo el espacio restante)
         nav.grid_columnconfigure(0, weight=0, minsize=210)
         nav.grid_columnconfigure(1, weight=1)
-        nav.grid_columnconfigure(2, weight=0, minsize=320)
 
         # ── Brand ─────────────────────────────────────────────
         brand = tk.Frame(nav, bg=NAV_BG)
@@ -200,79 +217,8 @@ class BibliotecaUMAG(ctk.CTk):
             btn.pack(side="top", padx=4)
             self.nav_buttons[key] = btn
 
-        # ── Zona derecha ──────────────────────────────────────
-        right_f = tk.Frame(nav, bg=NAV_BG)
-        right_f.grid(row=0, column=2, sticky="nsew", padx=(0, 14))
-
-        search_wrap = tk.Frame(right_f, bg=NAV_BG)
-        search_wrap.pack(side="left", padx=(0, 12), pady=11)
-        ctk.CTkEntry(
-            search_wrap,
-            placeholder_text="Buscar…",
-            width=190, height=30,
-            corner_radius=15,
-            border_color="#374151",
-            fg_color="#1F2937",
-            text_color="#E5E7EB",
-            placeholder_text_color=NAV_TEXT,
-            font=("Segoe UI", 11),
-        ).pack()
-
-        tk.Frame(right_f, width=1, bg="#374151").pack(
-            side="left", fill="y", pady=10, padx=4)
-
-        clock_f = tk.Frame(right_f, bg=NAV_BG)
-        clock_f.pack(side="left", padx=(4, 12))
-
-        self.nav_date_label = ctk.CTkLabel(
-            clock_f, text="",
-            font=("Consolas", 10), text_color=NAV_TEXT,
-            fg_color=NAV_BG,
-        )
-        self.nav_date_label.pack()
-        self.nav_time_label = ctk.CTkLabel(
-            clock_f, text="",
-            font=("Consolas", 11, "bold"), text_color="#E5E7EB",
-            fg_color=NAV_BG,
-        )
-        self.nav_time_label.pack()
-        self._update_clock()
-
-        # Notificación
-        notif_f = ctk.CTkFrame(
-            right_f, width=30, height=30,
-            fg_color="#1F2937", corner_radius=8,
-            border_width=1, border_color="#374151",
-        )
-        notif_f.pack(side="left", padx=(0, 10))
-        notif_f.pack_propagate(False)
-        ctk.CTkLabel(
-            notif_f, text="🔔",
-            font=("Segoe UI", 13), text_color=NAV_TEXT,
-        ).place(relx=0.5, rely=0.5, anchor="center")
-        ctk.CTkFrame(notif_f, width=8, height=8,
-                     fg_color="#E11D48", corner_radius=4).place(relx=0.75, rely=0.18)
-
-        # Avatar
-        avatar_f = ctk.CTkFrame(
-            right_f, width=30, height=30,
-            fg_color=UMAG_PURPLE, corner_radius=15,
-        )
-        avatar_f.pack(side="left")
-        avatar_f.pack_propagate(False)
-        ctk.CTkLabel(
-            avatar_f, text="AD",
-            font=("Segoe UI", 10, "bold"), text_color="#FFFFFF",
-        ).place(relx=0.5, rely=0.5, anchor="center")
-
-    # ----------------------------------------------------------
-    # RELOJ
-    # ----------------------------------------------------------
-    def _update_clock(self):
-        now = datetime.now()
-        self.nav_date_label.configure(text=now.strftime("%d/%m/%Y"))
-        self.nav_time_label.configure(text=now.strftime("%H:%M:%S"))
-        self.after(1000, self._update_clock)
+        # ── Zona derecha eliminada a pedido: ya no hay buscador, reloj,
+        # notificación ni avatar. El topnav queda solo con brand + botones.
 
     # ----------------------------------------------------------
     # NAVEGACIÓN
