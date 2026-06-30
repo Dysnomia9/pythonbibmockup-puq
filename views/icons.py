@@ -296,19 +296,18 @@ def _get_icon_image(name: str, size: int = 24, color: str = "#FFFFFF", bg: str =
     _icon_cache[key] = img
     return img
 
+_ctk_image_cache = {}
 
-def get_ctk_icon(name: str, size: int = 24, color: str = "#FFFFFF", dark_color: str = None) -> 'CTkImage':
-    """Returns a CTkImage ready to use in CustomTkinter widgets."""
+def get_ctk_icon(name, size=24, color="#FFFFFF", dark_color=None):
     import customtkinter as ctk
-    
+    key = f"ctk_{name}_{size}_{color}_{dark_color}"
+    if key in _ctk_image_cache:
+        return _ctk_image_cache[key]
     light_img = _get_icon_image(name, size, color)
-    dark_img = _get_icon_image(name, size, dark_color or color)
-    
-    return ctk.CTkImage(
-        light_image=light_img,
-        dark_image=dark_img,
-        size=(size, size)
-    )
+    dark_img  = _get_icon_image(name, size, dark_color or color)
+    result = ctk.CTkImage(light_image=light_img, dark_image=dark_img, size=(size, size))
+    _ctk_image_cache[key] = result
+    return result
 
 
 def get_badge_icon(name: str, size: int = 40, icon_color: str = "#FFFFFF", bg_color: str = "#4338CA", icon_size_ratio: float = 0.55) -> 'CTkImage':
