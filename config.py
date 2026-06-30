@@ -1,40 +1,34 @@
-# -*- coding: utf-8 -*-
-"""
-config.py — Colores, constantes y datos mock del Sistema Bibliotecario UMAG
-Paleta rediseñada 2026: navy + indigo + semánticos limpios
-"""
+# Colores, constantes y datos mock del Sistema Bibliotecario UMAG
 
 import re
 
-# ============================================================
-# PALETA DE COLORES — Rediseño 2026
-# ============================================================
+
 
 # Navbar / chrome
-NAV_BG            = "#111827"   # navy oscuro (antes SIDEBAR_BG opresivo)
-NAV_HOVER         = "#1F2937"   # hover sutil
-NAV_ACTIVE_BG     = "#1E1B4B"   # fondo ítem activo
-NAV_ACTIVE_BORDER = "#4F46E5"   # línea inferior activo (indigo vibrante)
-NAV_TEXT          = "#9CA3AF"   # texto inactivo
-NAV_TEXT_ACTIVE   = "#FFFFFF"   # texto activo
-NAV_BORDER        = "#1F2937"   # separadores en nav
+NAV_BG            = "#111827"   
+NAV_HOVER         = "#1F2937"   
+NAV_ACTIVE_BG     = "#1E1B4B"   
+NAV_ACTIVE_BORDER = "#4F46E5"  
+NAV_TEXT          = "#9CA3AF" 
+NAV_TEXT_ACTIVE   = "#FFFFFF"   
+NAV_BORDER        = "#1F2937"   
 
-# Mantener aliases legacy para no romper otros módulos
+
 SIDEBAR_BG        = NAV_BG
 SIDEBAR_HOVER     = NAV_HOVER
 SIDEBAR_ACTIVE    = NAV_ACTIVE_BG
 UMAG_PURPLE_DARK  = "#0F172A"
-UMAG_PURPLE       = "#4F46E5"   # indigo principal (antes azul-morado genérico)
-UMAG_INDIGO       = "#6366F1"   # indigo secundario
-UMAG_LIGHT        = "#EEF2FF"   # fondo suave indigo
+UMAG_PURPLE       = "#4F46E5"   
+UMAG_INDIGO       = "#6366F1"  
+UMAG_LIGHT        = "#EEF2FF"   
 UMAG_ACCENT       = "#4F46E5"
 
 # Superficie / layout
 CARD_BG           = "#FFFFFF"
-BG_MAIN           = "#F8FAFC"   # fondo general (antes F0F2FA, más grisáceo)
-TEXT_PRIMARY      = "#111827"   # casi negro, mayor contraste WCAG
+BG_MAIN           = "#F8FAFC"   
+TEXT_PRIMARY      = "#111827"  
 TEXT_SECONDARY    = "#6B7280"
-BORDER_COLOR      = "#E5E7EB"   # borde más suave
+BORDER_COLOR      = "#E5E7EB"  
 
 # Estados semánticos
 SUCCESS           = "#059669"
@@ -42,18 +36,17 @@ WARNING           = "#D97706"
 DANGER            = "#DC2626"
 INFO              = "#2563EB"
 
-# Acentos de módulo (cada módulo tiene su color)
-ACCENT_TEAL       = "#0D9488"   # Entrada
-ACCENT_AMBER      = "#D97706"   # Salas
-ACCENT_ROSE       = "#BE185D"   # Reportes / alertas
-ACCENT_EMERALD    = "#10B981"   # disponible / ok
+# Acentos de módulo 
+ACCENT_TEAL       = "#0D9488"   
+ACCENT_AMBER      = "#D97706"   
+ACCENT_ROSE       = "#BE185D"   
+ACCENT_EMERALD    = "#10B981"  
 
-# Lomos decorativos (sidebar brand)
+# Lomos decorativos
 SPINE_COLORS = ["#4F46E5", "#0D9488", "#D97706", "#BE185D", "#059669", "#6366F1"]
 
-# ============================================================
+
 # TIPOGRAFÍA
-# ============================================================
 FONT_TITLE   = ("Segoe UI", 16, "bold")
 FONT_HEADING = ("Segoe UI", 14, "bold")
 FONT_SUBHEAD = ("Segoe UI", 12, "bold")
@@ -62,9 +55,8 @@ FONT_SMALL   = ("Segoe UI", 10)
 FONT_MONO    = ("Consolas", 12)
 FONT_MONO_LG = ("Consolas", 32, "bold")
 
-# ============================================================
+
 # UTILIDADES RUT
-# ============================================================
 def calcular_dv(rut: int) -> str:
     suma, mult = 0, 2
     for d in reversed(str(rut)):
@@ -99,9 +91,8 @@ def format_rut(value: str) -> str:
         formatted = c + formatted
     return f"{formatted}-{dv}" if dv else formatted
 
-# ============================================================
+
 # DATOS MOCK
-# ============================================================
 MOCK_ENTRADAS = [
     {"id": 1, "hora": "10:15", "via": "Manual",       "rut": "12.345.678-5", "nombre": "María González"},
     {"id": 2, "hora": "10:02", "via": "QR",           "rut": "16.789.012-3", "nombre": "Carlos Muñoz"},

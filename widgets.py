@@ -1,9 +1,5 @@
-# -*- coding: utf-8 -*-
-"""
-widgets.py — Componentes reutilizables del Sistema Bibliotecario UMAG
-Rediseño 2026: ajuste de colores y bordes a nueva paleta.
-Tolerante a icons=None (cuando views/icons.py no está disponible).
-"""
+# Componentes reutilizables del Sistema Bibliotecario UMAG
+
 
 import customtkinter as ctk
 from tkinter import ttk, messagebox
@@ -101,7 +97,7 @@ def make_mini_stat(parent, badge_icon, label: str, value, color: str, col: int):
 
 
 def make_treeview_style(style_name: str):
-    """Aplica estilo visual a Treeview con cabecera destacada y filas alternadas."""
+
     style = ttk.Style()
     style.theme_use('clam')
 
@@ -116,7 +112,6 @@ def make_treeview_style(style_name: str):
         borderwidth=0,
         relief="flat",
     )
-    # Cabecera con fondo indigo suave
     style.configure(
         f"{style_name}.Treeview.Heading",
         background="#EEF2FF",
@@ -144,7 +139,7 @@ def apply_table_stripes(tree: "ttk.Treeview", stripe_color: str = "#F8FAFF"):
     tree.tag_configure("odd",  background=CARD_BG)
     for i, iid in enumerate(tree.get_children()):
         current_tags = list(tree.item(iid, "tags"))
-        # Quitar tags de stripe previos
+  
         current_tags = [t for t in current_tags if t not in ("even", "odd")]
         current_tags.append("even" if i % 2 == 0 else "odd")
         tree.item(iid, tags=current_tags)
@@ -159,9 +154,8 @@ def darken(hex_color: str, factor: float = 0.82) -> str:
     return f"#{max(0,int(r*factor)):02x}{max(0,int(g*factor)):02x}{max(0,int(b*factor)):02x}"
 
 
-# ============================================================
 # DIÁLOGOS
-# ============================================================
+
 def make_dialog(parent, title: str,
                 width: int = 460, height: int = 360) -> ctk.CTkToplevel:
     """CTkToplevel centrado con grab_set diferido (fix Python 3.14+)."""
@@ -191,7 +185,7 @@ def dialog_action_buttons(parent, confirm_text: str, confirm_icon,
     btn_frame = ctk.CTkFrame(parent, fg_color="transparent")
     btn_frame.grid(row=row, column=0, columnspan=2, pady=16)
 
-    # Botón confirmar — con o sin ícono
+
     if confirm_icon is not None:
         ctk.CTkButton(
             btn_frame,

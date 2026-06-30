@@ -1,11 +1,5 @@
-# -*- coding: utf-8 -*-
-"""
-app.py — Ventana principal con TOPNAV horizontal — Sistema Bibliotecario UMAG
-Fix definitivo CTk 6.x:
-  - Nav usa tk.Frame nativo (evita bug de canvas interno de CTkFrame en CTk 6.x)
-  - grid_rowconfigure con minsize=52 en row 0
-  - Cache de vistas sin destroy/recreate
-"""
+#  Ventana principal — Sistema Bibliotecario UMAG
+
 
 import sys
 import os
@@ -45,28 +39,8 @@ class BibliotecaUMAG(ctk.CTk):
         self._build_ui()
         self._bind_shortcuts()
 
-        # FIX retraso/parpadeo al abrir (F1 / arranque):
-        # Antes _show_module("dashboard") se llamaba aquí mismo, DENTRO de
-        # __init__, es decir ANTES de que mainloop() arrancara. Tkinter no
-        # pinta nada en pantalla hasta que __init__ termina y entra al loop
-        # de eventos, así que la ventana se hacía visible y en el MISMO
-        # instante debía construir todo el dashboard (KPIs, accesos rápidos,
-        # gráfico de barras, donut, actividad con scroll). El usuario veía
-        # la ventana vacía/con topnav a medio pintar durante ese lapso, y
-        # luego todo aparecía de golpe -> esa es la sensación de retraso +
-        # parpadeo al abrir.
-        #
-        # Con after(15, ...) dejamos que mainloop() haga su primer ciclo de
-        # render: la ventana y el topnav quedan completamente pintados y
-        # visibles, y el dashboard se construye un instante después sobre
-        # una UI que el usuario ya está viendo, en vez de una pantalla en
-        # blanco. 15ms es imperceptible para el usuario pero le da a
-        # Tkinter el respiro que necesita para completar el primer frame.
-        self.after(15, lambda: self._show_module("dashboard"))
-
-    # ----------------------------------------------------------
     # ICONS
-    # ----------------------------------------------------------
+
     def _try_load_icons(self):
         try:
             from views.icons import get_ctk_icon, get_badge_icon
@@ -109,18 +83,14 @@ class BibliotecaUMAG(ctk.CTk):
                 "bell", "circle_green",
             ]}
 
-    # ----------------------------------------------------------
     # ATAJOS
-    # ----------------------------------------------------------
     def _bind_shortcuts(self):
         self.bind("<F1>", lambda e: self._show_module("dashboard"))
         self.bind("<F2>", lambda e: self._show_module("entrada"))
         self.bind("<F3>", lambda e: self._show_module("prestamo"))
         self.bind("<F4>", lambda e: self._show_module("salas"))
 
-    # ----------------------------------------------------------
     # ESQUELETO UI
-    # ----------------------------------------------------------
     def _build_ui(self):
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(0, weight=0, minsize=52)
@@ -133,22 +103,16 @@ class BibliotecaUMAG(ctk.CTk):
         self.module_frame.grid_columnconfigure(0, weight=1)
         self.module_frame.grid_rowconfigure(0, weight=1)
 
-    # ----------------------------------------------------------
-    # TOPNAV — usa tk.Frame nativo como contenedor raíz
-    # CTk 6.x: CTkFrame con canvas interno ignora grid_propagate(False)
-    # tk.Frame nativo respeta height=52 + grid_propagate(False) siempre
-    # ----------------------------------------------------------
+
     def _build_topnav(self):
-        # ── Contenedor nativo — garantiza 52px sin importar CTk version ──
+
         nav = tk.Frame(self, height=52, bg=NAV_BG)
         nav.grid(row=0, column=0, sticky="ew")
         nav.grid_propagate(False)
 
-        # Columnas: brand fijo | nav expande (ocupa todo el espacio restante)
         nav.grid_columnconfigure(0, weight=0, minsize=210)
         nav.grid_columnconfigure(1, weight=1)
 
-        # ── Brand ─────────────────────────────────────────────
         brand = tk.Frame(nav, bg=NAV_BG)
         brand.grid(row=0, column=0, sticky="nsew", padx=(14, 0))
 
@@ -175,7 +139,7 @@ class BibliotecaUMAG(ctk.CTk):
             fg_color=NAV_BG,
         ).pack(anchor="w")
 
-        # ── Ítems de navegación ───────────────────────────────
+        #  Ítems de navegación
         nav_items_f = tk.Frame(nav, bg=NAV_BG)
         nav_items_f.grid(row=0, column=1, sticky="ns")
 
@@ -217,12 +181,7 @@ class BibliotecaUMAG(ctk.CTk):
             btn.pack(side="top", padx=4)
             self.nav_buttons[key] = btn
 
-        # ── Zona derecha eliminada a pedido: ya no hay buscador, reloj,
-        # notificación ni avatar. El topnav queda solo con brand + botones.
-
-    # ----------------------------------------------------------
-    # NAVEGACIÓN
-    # ----------------------------------------------------------
+    # NAVEGACIÓN-
     MODULE_COLOR = {
         "dashboard": UMAG_PURPLE,
         "entrada":   ACCENT_TEAL,

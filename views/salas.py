@@ -1,22 +1,4 @@
-# -*- coding: utf-8 -*-
-"""
-views/salas.py — Vista de Reserva de Salas de Estudio
-Rediseño: celdas con estado visual claro, cabecera de sala con color,
-selector de personas dinámico con campos RUT por persona.
-
-FIX rendimiento/parpadeo:
-Antes, _fill_grid creaba ~150 widgets CTkButton (25 salas x 6 bloques) más
-~50 CTkFrame (nombre+capacidad) DENTRO de un CTkScrollableFrame. Cada
-CTkButton de CustomTkinter no es un botón nativo: internamente dibuja en un
-canvas propio con su propio ciclo de render, así que crear 150 de golpe
-bloquea el hilo de Tkinter el tiempo suficiente para que se note como
-"pantalla en blanco -> aparece todo de golpe" (el parpadeo).
-Ahora las celdas usan tk.Label nativo (con bind de click), que es lo mismo
-que usa CTkScrollableFrame por debajo pero sin el overhead de canvas por
-widget. El contenedor con scroll también pasa de CTkScrollableFrame a un
-tk.Frame + tk.Canvas + Scrollbar nativos, igual de funcional pero mucho
-más liviano para una grilla con muchas celdas.
-"""
+#  Vista de Reserva de Salas de Estudio
 
 import tkinter as tk
 import customtkinter as ctk
@@ -26,11 +8,10 @@ from config import *
 from widgets import (make_card, make_stat_card, make_section_header,
                      make_dialog, dialog_action_buttons, labeled_entry, darken)
 
-RUT_MAXLEN = 12  # "12.345.678-5"
+RUT_MAXLEN = 12  
 
-# Paleta de estado de celdas
-_COLOR_LIBRE    = "#10B981"   # esmeralda
-_COLOR_OCUPADO  = "#BE185D"   # rosa
+_COLOR_LIBRE    = "#10B981"   
+_COLOR_OCUPADO  = "#BE185D"  
 _COLOR_HOV_LIB  = "#059669"
 _COLOR_HOV_OCP  = "#9D174D"
 
@@ -39,7 +20,7 @@ def build(parent: ctk.CTkFrame, icons: dict, app_root):
     parent.grid_columnconfigure(0, weight=1)
     parent.grid_rowconfigure(2, weight=1)
 
-    # ── KPI strip con fondos de color ────────────────────────────────────────
+    # KPI strip con fondos de color
     stats = ctk.CTkFrame(parent, fg_color="transparent")
     stats.grid(row=0, column=0, sticky="ew", pady=(0, 8))
     stats.grid_columnconfigure((0, 1, 2, 3), weight=1)
@@ -59,7 +40,7 @@ def build(parent: ctk.CTkFrame, icons: dict, app_root):
                  f"{ocupados*100//total_bloques}%",
                  ACCENT_TEAL, "#F0FDFA", 3)
 
-    # ── Barra de controles: fecha + leyenda ──────────────────────
+    #Barra de controles
     ctrl = make_card(parent)
     ctrl.grid(row=1, column=0, sticky="ew", pady=(0, 8))
     ctrl.grid_columnconfigure(2, weight=1)
@@ -72,7 +53,7 @@ def build(parent: ctk.CTkFrame, icons: dict, app_root):
     date_e.grid(row=0, column=1, pady=12)
     date_e.insert(0, datetime.now().strftime("%d/%m/%Y"))
 
-    # Leyenda visual mejorada
+
     legend = ctk.CTkFrame(ctrl, fg_color="transparent")
     legend.grid(row=0, column=3, padx=20, pady=12)
 
@@ -87,7 +68,7 @@ def build(parent: ctk.CTkFrame, icons: dict, app_root):
                      text_color=TEXT_SECONDARY).grid(
             row=0, column=col_l * 2 + 1, padx=(0, 16))
 
-    # ── Grid de salas ────────────────────────────────────────────
+    # Grid de salas 
     grid_card = make_card(parent)
     grid_card.grid(row=2, column=0, sticky="nsew")
     grid_card.grid_columnconfigure(0, weight=1)
@@ -111,10 +92,6 @@ def build(parent: ctk.CTkFrame, icons: dict, app_root):
         ctk.CTkLabel(hdr, text=blq, font=("Segoe UI", 9, "bold"),
                      text_color=UMAG_PURPLE).grid(row=0, column=b + 2, padx=3, pady=10)
 
-    # ── Scroll nativo (tk.Canvas + Scrollbar) en vez de CTkScrollableFrame ──
-    # CTkScrollableFrame agrega overhead de canvas extra que no aporta nada
-    # cuando el contenido ya son ~200 widgets. Un canvas nativo con un frame
-    # interno es más liviano y se comporta igual para el usuario.
     scroll_outer = tk.Frame(grid_card, bg=CARD_BG)
     scroll_outer.grid(row=1, column=0, sticky="nsew", padx=6, pady=(4, 8))
     scroll_outer.grid_columnconfigure(0, weight=1)
@@ -155,7 +132,6 @@ def build(parent: ctk.CTkFrame, icons: dict, app_root):
 
 def _fill_grid(scroll, icons: dict, app_root):
     for s_idx, sala in enumerate(SALAS_CONFIG):
-        # Nombre de sala — fondo alternado
         row_bg = "#F8FAFF" if s_idx % 2 == 0 else CARD_BG
         name_f = tk.Frame(scroll, bg=row_bg, height=36)
         name_f.grid(row=s_idx, column=0, padx=(2, 2), pady=1, sticky="nsew")
@@ -185,9 +161,6 @@ def _fill_grid(scroll, icons: dict, app_root):
 
 
 def _make_cell_label(scroll, text, bg, hover_bg, row, col, command):
-    """Celda de grilla liviana: tk.Label con hover/click manual.
-    Reemplaza a CTkButton (canvas por widget) por un Label nativo,
-    que para 150+ celdas es notablemente más rápido de construir."""
     lbl = tk.Label(
         scroll, text=text, font=("Segoe UI", 9, "bold"),
         fg="white", bg=bg, height=2, cursor="hand2",
@@ -200,7 +173,7 @@ def _make_cell_label(scroll, text, bg, hover_bg, row, col, command):
 
 
 def _cell_libre(scroll, icons, app_root, sala, bloque, row, col):
-    """Celda disponible — verde con checkmark."""
+
     _make_cell_label(
         scroll, "✓ Libre", _COLOR_LIBRE, _COLOR_HOV_LIB, row, col,
         command=lambda s=sala, b=bloque: _reservar(app_root, icons, s, b),
@@ -208,7 +181,6 @@ def _cell_libre(scroll, icons, app_root, sala, bloque, row, col):
 
 
 def _cell_ocupada(scroll, res, sala, row, col):
-    """Celda ocupada — roja con iniciales."""
     parts   = res["nombre"].split()
     initials = (parts[0][0] + parts[-1][0]).upper() if len(parts) >= 2 else parts[0][:2].upper()
     _make_cell_label(
@@ -320,7 +292,7 @@ def _reservar(app_root, icons, sala: dict, bloque: str):
                           _confirmar, dialog.destroy, row=4)
 
 
-# ── Helper: KPI card cuadrada con fondo de color ─────────────────────────────
+#  KPI card cuadrada con fondo de color
 def _kpi_colored(parent, badge_icon, label: str, value, color: str, bg: str, col: int):
     """Tarjeta KPI con fondo suave, borde sutil y badge cuadrado."""
     card = ctk.CTkFrame(parent, fg_color=bg, corner_radius=12,
@@ -328,7 +300,6 @@ def _kpi_colored(parent, badge_icon, label: str, value, color: str, bg: str, col
     card.grid(row=0, column=col, sticky="nsew", padx=5, pady=4)
     card.grid_columnconfigure(0, weight=1)
 
-    # Badge cuadrado con ícono
     badge_f = ctk.CTkFrame(card, width=42, height=42,
                            fg_color=color, corner_radius=8)
     badge_f.grid(row=0, column=0, padx=(14, 0), pady=(14, 6), sticky="w")

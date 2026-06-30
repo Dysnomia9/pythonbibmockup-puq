@@ -1,7 +1,5 @@
-# -*- coding: utf-8 -*-
-"""
-views/usuarios.py — Vista de Gestión de Usuarios
-"""
+# Vista de Gestión de Usuarios
+
 
 import customtkinter as ctk
 from tkinter import ttk, messagebox
@@ -15,7 +13,7 @@ def build(parent: ctk.CTkFrame, icons: dict, app_root):
     parent.grid_columnconfigure(0, weight=1)
     parent.grid_rowconfigure(2, weight=1)
 
-    # ── Barra búsqueda + nuevo usuario ──────────────────────────
+    # Barra búsqueda + nuevo usuario 
     top = make_card(parent)
     top.grid(row=0, column=0, sticky="ew", pady=(0, 8))
     top.grid_columnconfigure(1, weight=1)
@@ -51,7 +49,7 @@ def build(parent: ctk.CTkFrame, icons: dict, app_root):
         command=lambda: _nuevo_usuario(app_root, icons),
     ).grid(row=0, column=3, padx=(5, 18), pady=14)
 
-    # ── KPI stats ────────────────────────────────────────────────
+    # KPI stats
     stats = ctk.CTkFrame(parent, fg_color="transparent")
     stats.grid(row=1, column=0, sticky="ew", pady=(0, 8))
     stats.grid_columnconfigure((0, 1, 2, 3), weight=1)
@@ -65,7 +63,7 @@ def build(parent: ctk.CTkFrame, icons: dict, app_root):
     make_stat_card(stats, icon_or_none(icons, "badge_user"),  "Estudiantes",     estudiantes,        INFO,         0, 2)
     make_stat_card(stats, icon_or_none(icons, "badge_list"),  "Docentes",        docentes,           ACCENT_AMBER, 0, 3)
 
-    # ── Tabla usuarios ───────────────────────────────────────────
+    # Tabla usuarios 
     table_card = make_card(parent)
     table_card.grid(row=2, column=0, sticky="nsew", pady=(0, 4))
     table_card.grid_columnconfigure(0, weight=1)
@@ -102,7 +100,7 @@ def build(parent: ctk.CTkFrame, icons: dict, app_root):
     tree.configure(yscrollcommand=sb.set)
 
 
-# ── Diálogo Nuevo Usuario ─────────────────────────────────────────
+# Diálogo Nuevo Usuario
 def _nuevo_usuario(app_root, icons):
     dialog = make_dialog(app_root, "Nuevo Usuario", width=460, height=440)
 

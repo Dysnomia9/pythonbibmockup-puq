@@ -1,7 +1,5 @@
-# -*- coding: utf-8 -*-
-"""
-views/prestamo.py — Vista de Gestión de Préstamos
-"""
+# Vista de Gestión de Préstamos
+
 
 import customtkinter as ctk
 from tkinter import ttk, messagebox

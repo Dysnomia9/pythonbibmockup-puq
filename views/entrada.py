@@ -1,7 +1,4 @@
-# -*- coding: utf-8 -*-
-"""
-views/entrada.py — Vista de Registro de Entrada
-"""
+#views/entrada.py  Vista de Registro de Entrada
 
 import customtkinter as ctk
 from tkinter import ttk, messagebox
@@ -13,9 +10,9 @@ from widgets import (make_card, make_treeview_style,
 
 # Colores de fondo para cada stat card
 _STAT_BACKGROUNDS = [
-    ("#EEF2FF", UMAG_PURPLE),   # En Sala   — índigo suave
-    ("#F0FDFA", ACCENT_TEAL),   # Entradas  — verde agua suave
-    ("#F0FDF4", SUCCESS),       # Disponibles — verde suave
+    ("#EEF2FF", UMAG_PURPLE),  
+    ("#F0FDFA", ACCENT_TEAL),  
+    ("#F0FDF4", SUCCESS),      
 ]
 
 
@@ -207,7 +204,7 @@ def build(parent: ctk.CTkFrame, icons: dict,
                  font=FONT_SMALL, text_color=TEXT_SECONDARY).grid(row=13, column=0, pady=(0, 14))
 
 
-# ── Helper: stat box cuadrado con fondo de color ─────────────────────────────
+#  Helper stat box cuadrado con fondo de color 
 def _stat_box(parent, badge_icon, label: str, value, color: str, bg: str, col: int):
     """Tarjeta stat cuadrada con fondo de color suave, badge cuadrado y valor."""
     card = ctk.CTkFrame(parent, fg_color=bg, corner_radius=12,

@@ -1,10 +1,5 @@
-# -*- coding: utf-8 -*-
-"""
-biblioteca_umag.py — Entry point del Sistema Bibliotecario UMAG
-Universidad de Magallanes
+# Entry point del Sistema 
 
-Atajos: F1=Dashboard | F2=Entrada | F3=Préstamo | F4=Salas
-"""
 
 import sys
 import os
@@ -16,9 +11,7 @@ from config import NAV_BG, TEXT_SECONDARY, SUCCESS
 from datetime import datetime
 
 
-# ============================================================
-# STATUS BAR
-# ============================================================
+
 class StatusBar(ctk.CTkFrame):
     def __init__(self, parent):
         super().__init__(parent, height=24, fg_color=NAV_BG, corner_radius=0)
@@ -49,20 +42,15 @@ class StatusBar(ctk.CTkFrame):
         self.after(1000, self._update)
 
 
-# ============================================================
-# MAIN
-# ============================================================
+
 def main():
     ctk.set_appearance_mode("light")
     ctk.set_default_color_theme("blue")
 
     app = BibliotecaUMAG()
 
-    # FIX: reconfiguramos row 0 DESPUÉS de instanciar para asegurar que
-    # minsize=52 se mantenga y que el weight=0 no colapse la topbar
     app.grid_rowconfigure(0, weight=0, minsize=52)
 
-    # Status bar en row=2 (row=0 topnav, row=1 contenido)
     app.grid_rowconfigure(2, weight=0, minsize=24)
     status = StatusBar(app)
     status.grid(row=2, column=0, sticky="ew")

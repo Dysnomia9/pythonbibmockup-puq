@@ -1,8 +1,5 @@
-# -*- coding: utf-8 -*-
-"""
-views/dashboard.py — Dashboard
-Sin emojis: todos los íconos vienen del sistema vectorial de icons.py
-"""
+#  Dashboard
+
 
 import tkinter as tk
 import customtkinter as ctk
@@ -14,7 +11,6 @@ from widgets import make_card, make_section_header, darken
 def build(parent: ctk.CTkFrame, icons: dict, personas_en_sala: int,
           capacidad: int, navigate_cb):
 
-    # Cargar íconos extra que necesita el dashboard
     _extra = {}
     try:
         from views.icons import get_ctk_icon, get_badge_icon
@@ -37,9 +33,7 @@ def build(parent: ctk.CTkFrame, icons: dict, personas_en_sala: int,
     parent.grid_columnconfigure(1, weight=2)
     parent.grid_rowconfigure(1, weight=1)
 
-    # ══════════════════════════════════════════════
     # COLUMNA IZQUIERDA
-    # ══════════════════════════════════════════════
     left = ctk.CTkFrame(parent, fg_color="transparent")
     left.grid(row=0, column=0, rowspan=2, sticky="nsew", padx=(0, 8))
     left.grid_columnconfigure(0, weight=1)
@@ -134,25 +128,18 @@ def build(parent: ctk.CTkFrame, icons: dict, personas_en_sala: int,
             canvas.create_text((x0+x1)/2, h-PAD_B+12, text=d["dia"][:3],
                                font=("Segoe UI", 9), fill=TEXT_SECONDARY)
 
-    # FIX parpadeo: antes había bind a <Configure> + canvas.after(60, _draw),
-    # lo que disparaba _draw() DOS veces al construir la vista (una vez por
-    # el resize automático de Tkinter al hacer grid, y otra vez 60ms después
-    # por el after). Esto hacía que el canvas se viera vacío y luego "saltara"
-    # al dibujarse de nuevo. Con update_idletasks() forzamos que el canvas ya
-    # tenga su tamaño real ANTES del primer (y único) draw inicial.
+
     canvas.bind("<Configure>", _draw)
     canvas.update_idletasks()
     _draw()
 
-    # ══════════════════════════════════════════════
     # COLUMNA DERECHA
-    # ══════════════════════════════════════════════
     right = ctk.CTkFrame(parent, fg_color="transparent")
     right.grid(row=0, column=1, rowspan=2, sticky="nsew")
     right.grid_columnconfigure(0, weight=1)
     right.grid_rowconfigure(1, weight=1)
 
-    # ── Aforo visual ──────────────────────────────
+    # Aforo visual
     aforo_card = make_card(right)
     aforo_card.grid(row=0, column=0, sticky="ew", pady=(0, 8))
     aforo_card.grid_columnconfigure(0, weight=1)
@@ -192,7 +179,7 @@ def build(parent: ctk.CTkFrame, icons: dict, personas_en_sala: int,
     bar_aforo.grid(row=2, column=1, sticky="ew", pady=(6, 0))
     bar_aforo.set(pct)
 
-    # ── Actividad reciente ─────────────────────────
+    # Actividad reciente 
     act_card = make_card(right)
     act_card.grid(row=1, column=0, sticky="nsew", pady=(0, 4))
     act_card.grid_columnconfigure(0, weight=1)

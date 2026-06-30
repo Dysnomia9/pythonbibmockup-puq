@@ -1,7 +1,5 @@
-# -*- coding: utf-8 -*-
-"""
-views/reportes.py — Vista de Reportes y Estadísticas
-"""
+# Vista de Reportes y Estadísticas
+
 
 import tkinter as tk
 import customtkinter as ctk
@@ -26,7 +24,7 @@ def build(parent: ctk.CTkFrame, icons: dict):
     make_stat_card(stats, icons["badge_books"],   "Préstamos Activos",   "23",     ACCENT_AMBER, 0, 2)
     make_stat_card(stats, icons["badge_user"],    "Usuarios Registrados","156",    INFO,         0, 3)
 
-    # ── Gráfico barras ───────────────────────────────────────────
+    # Gráfico barras
     chart_card = make_card(parent)
     chart_card.grid(row=1, column=0, sticky="nsew", padx=(4, 4), pady=(0, 4))
     chart_card.grid_columnconfigure(0, weight=1)
@@ -86,7 +84,7 @@ def build(parent: ctk.CTkFrame, icons: dict):
     canvas.bind("<Configure>", _draw)
     canvas.after(50, _draw)
 
-    # ── Top libros ───────────────────────────────────────────────
+    #  Top libros
     books_card = make_card(parent)
     books_card.grid(row=1, column=1, sticky="nsew", padx=(0, 4), pady=(0, 4))
     books_card.grid_columnconfigure(0, weight=1)
