@@ -3,8 +3,22 @@
 views/salas.py — Vista de Reserva de Salas de Estudio
 Rediseño: celdas con estado visual claro, cabecera de sala con color,
 selector de personas dinámico con campos RUT por persona.
+
+FIX rendimiento/parpadeo:
+Antes, _fill_grid creaba ~150 widgets CTkButton (25 salas x 6 bloques) más
+~50 CTkFrame (nombre+capacidad) DENTRO de un CTkScrollableFrame. Cada
+CTkButton de CustomTkinter no es un botón nativo: internamente dibuja en un
+canvas propio con su propio ciclo de render, así que crear 150 de golpe
+bloquea el hilo de Tkinter el tiempo suficiente para que se note como
+"pantalla en blanco -> aparece todo de golpe" (el parpadeo).
+Ahora las celdas usan tk.Label nativo (con bind de click), que es lo mismo
+que usa CTkScrollableFrame por debajo pero sin el overhead de canvas por
+widget. El contenedor con scroll también pasa de CTkScrollableFrame a un
+tk.Frame + tk.Canvas + Scrollbar nativos, igual de funcional pero mucho
+más liviano para una grilla con muchas celdas.
 """
 
+import tkinter as tk
 import customtkinter as ctk
 from tkinter import messagebox
 from datetime import datetime
@@ -97,9 +111,40 @@ def build(parent: ctk.CTkFrame, icons: dict, app_root):
         ctk.CTkLabel(hdr, text=blq, font=("Segoe UI", 9, "bold"),
                      text_color=UMAG_PURPLE).grid(row=0, column=b + 2, padx=3, pady=10)
 
-    # Scroll
-    scroll = ctk.CTkScrollableFrame(grid_card, fg_color="transparent")
-    scroll.grid(row=1, column=0, sticky="nsew", padx=6, pady=(4, 8))
+    # ── Scroll nativo (tk.Canvas + Scrollbar) en vez de CTkScrollableFrame ──
+    # CTkScrollableFrame agrega overhead de canvas extra que no aporta nada
+    # cuando el contenido ya son ~200 widgets. Un canvas nativo con un frame
+    # interno es más liviano y se comporta igual para el usuario.
+    scroll_outer = tk.Frame(grid_card, bg=CARD_BG)
+    scroll_outer.grid(row=1, column=0, sticky="nsew", padx=6, pady=(4, 8))
+    scroll_outer.grid_columnconfigure(0, weight=1)
+    scroll_outer.grid_rowconfigure(0, weight=1)
+
+    scroll_canvas = tk.Canvas(scroll_outer, bg=CARD_BG, highlightthickness=0)
+    scroll_canvas.grid(row=0, column=0, sticky="nsew")
+
+    vsb = tk.Scrollbar(scroll_outer, orient="vertical", command=scroll_canvas.yview)
+    vsb.grid(row=0, column=1, sticky="ns")
+    scroll_canvas.configure(yscrollcommand=vsb.set)
+
+    scroll = tk.Frame(scroll_canvas, bg=CARD_BG)
+    scroll_window_id = scroll_canvas.create_window((0, 0), window=scroll, anchor="nw")
+
+    def _on_frame_configure(event=None):
+        scroll_canvas.configure(scrollregion=scroll_canvas.bbox("all"))
+
+    def _on_canvas_configure(event):
+        # El frame interno debe ocupar todo el ancho del canvas
+        scroll_canvas.itemconfig(scroll_window_id, width=event.width)
+
+    scroll.bind("<Configure>", _on_frame_configure)
+    scroll_canvas.bind("<Configure>", _on_canvas_configure)
+
+    def _on_mousewheel(event):
+        scroll_canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+
+    scroll_canvas.bind_all("<MouseWheel>", _on_mousewheel)
+
     scroll.grid_columnconfigure(0, weight=0, minsize=115)
     scroll.grid_columnconfigure(1, weight=0, minsize=44)
     for b in range(N_BLOQUES):
@@ -108,24 +153,24 @@ def build(parent: ctk.CTkFrame, icons: dict, app_root):
     _fill_grid(scroll, icons, app_root)
 
 
-def _fill_grid(scroll: ctk.CTkScrollableFrame, icons: dict, app_root):
+def _fill_grid(scroll, icons: dict, app_root):
     for s_idx, sala in enumerate(SALAS_CONFIG):
         # Nombre de sala — fondo alternado
         row_bg = "#F8FAFF" if s_idx % 2 == 0 else CARD_BG
-        name_f = ctk.CTkFrame(scroll, fg_color=row_bg, corner_radius=0, height=36)
+        name_f = tk.Frame(scroll, bg=row_bg, height=36)
         name_f.grid(row=s_idx, column=0, padx=(2, 2), pady=1, sticky="nsew")
         name_f.grid_propagate(False)
-        ctk.CTkLabel(name_f, text=sala["nombre"],
-                     font=("Segoe UI", 10, "bold"),
-                     text_color=UMAG_PURPLE if s_idx < 5 else TEXT_PRIMARY,
-                     anchor="w").place(x=10, rely=0.5, anchor="w")
+        tk.Label(name_f, text=sala["nombre"],
+                 font=("Segoe UI", 10, "bold"),
+                 fg=UMAG_PURPLE if s_idx < 5 else TEXT_PRIMARY,
+                 bg=row_bg).place(x=10, rely=0.5, anchor="w")
 
         # Capacidad
-        cap_f = ctk.CTkFrame(scroll, fg_color=row_bg, corner_radius=0, height=36)
+        cap_f = tk.Frame(scroll, bg=row_bg, height=36)
         cap_f.grid(row=s_idx, column=1, padx=1, pady=1, sticky="nsew")
         cap_f.grid_propagate(False)
-        ctk.CTkLabel(cap_f, text=str(sala["capacidad"]),
-                     font=("Consolas", 10), text_color=TEXT_SECONDARY).place(
+        tk.Label(cap_f, text=str(sala["capacidad"]),
+                 font=("Consolas", 10), fg=TEXT_SECONDARY, bg=row_bg).place(
             relx=0.5, rely=0.5, anchor="center")
 
         # Celdas de bloque
@@ -139,40 +184,41 @@ def _fill_grid(scroll: ctk.CTkScrollableFrame, icons: dict, app_root):
                             BLOQUES_HORARIOS[b_idx], s_idx, b_idx)
 
 
+def _make_cell_label(scroll, text, bg, hover_bg, row, col, command):
+    """Celda de grilla liviana: tk.Label con hover/click manual.
+    Reemplaza a CTkButton (canvas por widget) por un Label nativo,
+    que para 150+ celdas es notablemente más rápido de construir."""
+    lbl = tk.Label(
+        scroll, text=text, font=("Segoe UI", 9, "bold"),
+        fg="white", bg=bg, height=2, cursor="hand2",
+    )
+    lbl.grid(row=row, column=col + 2, padx=3, pady=3, sticky="nsew")
+    lbl.bind("<Button-1>", lambda e: command())
+    lbl.bind("<Enter>", lambda e: lbl.configure(bg=hover_bg))
+    lbl.bind("<Leave>", lambda e: lbl.configure(bg=bg))
+    return lbl
+
+
 def _cell_libre(scroll, icons, app_root, sala, bloque, row, col):
     """Celda disponible — verde con checkmark."""
-    btn = ctk.CTkButton(
-        scroll,
-        text="✓ Libre",
-        font=("Segoe UI", 9, "bold"),
-        height=30, corner_radius=4,
-        fg_color=_COLOR_LIBRE,
-        hover_color=_COLOR_HOV_LIB,
-        text_color="white",
+    _make_cell_label(
+        scroll, "✓ Libre", _COLOR_LIBRE, _COLOR_HOV_LIB, row, col,
         command=lambda s=sala, b=bloque: _reservar(app_root, icons, s, b),
     )
-    btn.grid(row=row, column=col + 2, padx=3, pady=3, sticky="ew")
 
 
 def _cell_ocupada(scroll, res, sala, row, col):
     """Celda ocupada — roja con iniciales."""
     parts   = res["nombre"].split()
     initials = (parts[0][0] + parts[-1][0]).upper() if len(parts) >= 2 else parts[0][:2].upper()
-    btn = ctk.CTkButton(
-        scroll,
-        text=f"● {initials}",
-        font=("Segoe UI", 9, "bold"),
-        height=30, corner_radius=4,
-        fg_color=_COLOR_OCUPADO,
-        hover_color=_COLOR_HOV_OCP,
-        text_color="white",
+    _make_cell_label(
+        scroll, f"● {initials}", _COLOR_OCUPADO, _COLOR_HOV_OCP, row, col,
         command=lambda r=res, s=sala: messagebox.showinfo(
             "Reserva Ocupada",
             f"Sala: {s['nombre']}\n"
             f"Reservada por: {r['nombre']}\n"
             f"RUT: {r['rut']}"),
     )
-    btn.grid(row=row, column=col + 2, padx=3, pady=3, sticky="ew")
 
 
 def _apply_rut_format(entry: ctk.CTkEntry, event=None):

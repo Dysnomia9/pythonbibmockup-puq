@@ -310,11 +310,23 @@ def get_ctk_icon(name, size=24, color="#FFFFFF", dark_color=None):
     return result
 
 
+# Cache de badges — antes get_badge_icon recalculaba supersampling 4x + LANCZOS
+# en CADA llamada, sin guardar el resultado. Esto era costoso (Pillow puro,
+# sin aceleración) y se repetía cada vez que se construía dashboard/salas
+# si no venían de self.icons cacheado en app.py. Ahora se cachea igual que
+# get_ctk_icon.
+_badge_icon_cache = {}
+
 def get_badge_icon(name: str, size: int = 40, icon_color: str = "#FFFFFF", bg_color: str = "#4338CA", icon_size_ratio: float = 0.55) -> 'CTkImage':
     """Returns a CTkImage with colored circle background + icon, like Tailwind badge icons.
-    Uses supersampling (4x) for smooth antialiased circles."""
+    Uses supersampling (4x) for smooth antialiased circles.
+    Resultado cacheado por (name, size, icon_color, bg_color, icon_size_ratio)."""
     import customtkinter as ctk
-    
+
+    key = f"badge_{name}_{size}_{icon_color}_{bg_color}_{icon_size_ratio}"
+    if key in _badge_icon_cache:
+        return _badge_icon_cache[key]
+
     # Render at 4x then downscale for smooth edges
     scale = 4
     big = size * scale
@@ -333,8 +345,10 @@ def get_badge_icon(name: str, size: int = 40, icon_color: str = "#FFFFFF", bg_co
     
     # Downscale with high-quality resampling
     img = img_big.resize((size, size), Image.LANCZOS)
-    
-    return ctk.CTkImage(light_image=img, dark_image=img, size=(size, size))
+
+    result = ctk.CTkImage(light_image=img, dark_image=img, size=(size, size))
+    _badge_icon_cache[key] = result
+    return result
 
 
 # Convenience: get all available icon names

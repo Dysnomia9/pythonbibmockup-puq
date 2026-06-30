@@ -134,8 +134,15 @@ def build(parent: ctk.CTkFrame, icons: dict, personas_en_sala: int,
             canvas.create_text((x0+x1)/2, h-PAD_B+12, text=d["dia"][:3],
                                font=("Segoe UI", 9), fill=TEXT_SECONDARY)
 
+    # FIX parpadeo: antes había bind a <Configure> + canvas.after(60, _draw),
+    # lo que disparaba _draw() DOS veces al construir la vista (una vez por
+    # el resize automático de Tkinter al hacer grid, y otra vez 60ms después
+    # por el after). Esto hacía que el canvas se viera vacío y luego "saltara"
+    # al dibujarse de nuevo. Con update_idletasks() forzamos que el canvas ya
+    # tenga su tamaño real ANTES del primer (y único) draw inicial.
     canvas.bind("<Configure>", _draw)
-    canvas.after(60, _draw)
+    canvas.update_idletasks()
+    _draw()
 
     # ══════════════════════════════════════════════
     # COLUMNA DERECHA
